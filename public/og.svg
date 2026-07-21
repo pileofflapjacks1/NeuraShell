@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#070a0f"/>
+  <rect x="0" y="0" width="8" height="630" fill="#22d3ee"/>
+  <text x="72" y="160" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="64" font-weight="800">NeuraShell</text>
+  <text x="72" y="230" fill="#67e8f9" font-family="system-ui,sans-serif" font-size="28" font-weight="600">Computer-side intent control plane</text>
+  <text x="72" y="300" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="22">Readiness · ARM · panic · calibrate · record · OS dry-run</text>
+  <text x="72" y="400" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="18">Simulator-first · Not implant software · Not a medical device</text>
+  <text x="72" y="440" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="18">Not affiliated with Neuralink · Joe’s Neura Suite</text>
+  <text x="72" y="540" fill="#475569" font-family="system-ui,sans-serif" font-size="16">MVP 0.4.0 · neurashell-eta.vercel.app/demo · neurabeach.com</text>
+</svg>

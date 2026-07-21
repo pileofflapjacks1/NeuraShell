@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#070a0f"/>
+  <text x="60" y="70" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="30" font-weight="700">Actuate OS · dry-run first</text>
+  <text x="60" y="104" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="15">Intent→OS samples · live needs ARM + local relay · STOP drops live → dry-run</text>
+  <rect x="60" y="140" width="120" height="44" rx="10" fill="#17202b" stroke="#243041"/>
+  <text x="120" y="168" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="14" font-weight="600" text-anchor="middle">Off</text>
+  <rect x="200" y="140" width="140" height="44" rx="10" fill="#0e7490"/>
+  <text x="270" y="168" fill="#ecfeff" font-family="system-ui,sans-serif" font-size="14" font-weight="700" text-anchor="middle">Dry-run</text>
+  <rect x="360" y="140" width="120" height="44" rx="10" fill="#431407" stroke="#ea580c"/>
+  <text x="420" y="168" fill="#fdba74" font-family="system-ui,sans-serif" font-size="14" font-weight="600" text-anchor="middle">Live</text>
+  <rect x="60" y="220" width="1080" height="320" rx="16" fill="#0a0f16" stroke="#243041"/>
+  <text x="84" y="260" fill="#8b9bb0" font-family="ui-monospace,monospace" font-size="13">PREVIEW LOG</text>
+  <text x="84" y="300" fill="#a5f3fc" font-family="ui-monospace,monospace" font-size="15">10:31:02  move vx=0.42 vy=-0.18</text>
+  <text x="84" y="330" fill="#a5f3fc" font-family="ui-monospace,monospace" font-size="15">10:31:02  move vx=0.51 vy=-0.05</text>
+  <text x="84" y="360" fill="#fcd34d" font-family="ui-monospace,monospace" font-size="15">10:31:04  CLICK click=0.91</text>
+  <text x="84" y="390" fill="#67e8f9" font-family="ui-monospace,monospace" font-size="15">10:31:05  Dry-run preview enabled</text>
+  <text x="84" y="430" fill="#8b9bb0" font-family="ui-monospace,monospace" font-size="14">{"vx":0.5,"vy":-0.1,"click":0.0,"t":…}</text>
+  <text x="84" y="480" fill="#64748b" font-family="system-ui,sans-serif" font-size="13">pnpm os:relay · http://127.0.0.1:8765/intent · browser cannot move OS mouse alone</text>
+  <text x="60" y="600" fill="#64748b" font-family="system-ui,sans-serif" font-size="13">Not implant software · not SaMD · local POST only when Live</text>
+</svg>

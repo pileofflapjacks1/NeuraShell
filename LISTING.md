@@ -35,21 +35,25 @@
 
 ---
 
-## Screenshots (public paths)
-
-After deploy, prefer absolute live URLs. Repo placeholders:
-
-1. `/screenshots/01-session.svg` — Session Ready + panic bar  
-2. `/screenshots/02-modes.svg` — Mode switcher  
-3. `/screenshots/03-demo.svg` — `/demo` tour  
-
-Suggested live (post-deploy):
+## Screenshots (public absolute URLs)
 
 ```
 https://neurashell-eta.vercel.app/screenshots/01-session.svg
 https://neurashell-eta.vercel.app/screenshots/02-modes.svg
 https://neurashell-eta.vercel.app/screenshots/03-demo.svg
+https://neurashell-eta.vercel.app/screenshots/04-actuate.svg
+https://neurashell-eta.vercel.app/og.svg
 ```
+
+| Asset | Content |
+|-------|---------|
+| `01-session` | Session Ready + readiness + ARM + panic bar |
+| `02-modes` | Mode switcher + freeze UI |
+| `03-demo` | `/demo` tour path |
+| `04-actuate` | Actuate OS dry-run log |
+| `og.svg` | Open Graph / social card |
+
+Suite one-pager (repo): [`docs/WHAT-IS-NEURASHELL.md`](./docs/WHAT-IS-NEURASHELL.md)
 
 ---
 
@@ -61,7 +65,7 @@ Computer-side web app only. Not implant software. Not a medical device (not SaMD
 
 ## Tags
 
-`typescript` `nextjs` `accessibility` `control-plane` `intent-v1` `web` `neura-suite` `neurashell` `simulator` `panic-bar` `showcase`
+`typescript` `nextjs` `accessibility` `control-plane` `intent-v1` `web` `neura-suite` `neurashell` `simulator` `panic-bar` `showcase` `mvp` `readiness` `record-replay`
 
 ---
 
@@ -109,4 +113,4 @@ No env secrets required for demo mode.
 
 ## Beach re-seed note
 
-In a **NeuraBeach-only** session: add `seed-proj-neurashell` to `col-neura-suite` from this LISTING + `neurabeach-manifest.json` (same pattern as Binder / NFA). Update live demo URL if the Vercel hostname differs.
+**Already seeded** as `seed-proj-neurashell` in `col-neura-suite` (live). On catalog updates, sync Beach seed from this LISTING + `neurabeach-manifest.json` (version, screenshots, short description). Live demo hostname: `neurashell-eta.vercel.app`.

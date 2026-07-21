@@ -13,9 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://neurashell-eta.vercel.app"),
   title: "NeuraShell — computer-side intent control plane",
   description:
-    "Daily-driver computer-side control plane for high-bandwidth intent users: mode switch, panic stop/undo, confidence, local profiles, session ready. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.",
+    "MVP control plane for high-bandwidth intent: readiness, ARM, panic, calibrate, record/replay, Actuate OS dry-run. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.",
   keywords: [
     "accessibility",
     "BCI",
@@ -25,10 +26,19 @@ export const metadata: Metadata = {
     "Neura Suite",
   ],
   openGraph: {
+    title: "NeuraShell — MVP 0.4",
+    description:
+      "Computer-side control plane: readiness, ARM, panic, calibrate, record/replay, OS dry-run. Not implant software.",
+    type: "website",
+    url: "https://neurashell-eta.vercel.app",
+    images: [{ url: "/og.svg", width: 1200, height: 630, alt: "NeuraShell" }],
+  },
+  twitter: {
+    card: "summary_large_image",
     title: "NeuraShell",
     description:
-      "Computer-side control plane for high-bandwidth intent: modes, panic, profiles, session ready.",
-    type: "website",
+      "Computer-side intent control plane. Simulator-first. Not a medical device.",
+    images: ["/og.svg"],
   },
 };
 

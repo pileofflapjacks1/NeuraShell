@@ -1,20 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
   <rect width="1200" height="675" fill="#070a0f"/>
-  <rect x="0" y="0" width="1200" height="36" fill="#451a03"/>
-  <text x="600" y="24" fill="#fde68a" font-family="system-ui,sans-serif" font-size="14" text-anchor="middle">Computer-side only · Not medical · Not Neuralink-affiliated</text>
-  <rect x="24" y="52" width="1152" height="56" rx="10" fill="#0f141c" stroke="#7f1d1d"/>
-  <rect x="40" y="64" width="140" height="32" rx="8" fill="#dc2626"/>
-  <text x="110" y="86" fill="#fff" font-family="system-ui,sans-serif" font-size="16" font-weight="700" text-anchor="middle">STOP</text>
-  <rect x="196" y="64" width="140" height="32" rx="8" fill="#17202b" stroke="#243041"/>
-  <text x="266" y="86" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="16" font-weight="700" text-anchor="middle">UNDO</text>
-  <rect x="352" y="64" width="140" height="32" rx="8" fill="#17202b" stroke="#243041"/>
-  <text x="422" y="86" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="16" font-weight="700" text-anchor="middle">HOLD</text>
-  <text x="60" y="160" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="36" font-weight="700">NeuraShell</text>
-  <text x="60" y="200" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="18">Session Ready · Synthetic connected · Safe mode ON</text>
-  <rect x="60" y="240" width="1080" height="180" rx="16" fill="#0f141c" stroke="#243041"/>
-  <circle cx="100" cy="300" r="8" fill="#34d399"/>
-  <text x="120" y="306" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="18">Synthetic session active</text>
-  <rect x="120" y="340" width="220" height="44" rx="10" fill="#0e7490"/>
-  <text x="230" y="368" fill="#ecfeff" font-family="system-ui,sans-serif" font-size="16" font-weight="600" text-anchor="middle">Start synthetic session</text>
-  <text x="60" y="500" fill="#67e8f9" font-family="system-ui,sans-serif" font-size="14">v0.1 control plane · ui_only · computer_side</text>
+  <rect x="0" y="0" width="1200" height="34" fill="#451a03"/>
+  <text x="600" y="22" fill="#fde68a" font-family="system-ui,sans-serif" font-size="13" text-anchor="middle">Computer-side only · Not medical · Not Neuralink-affiliated</text>
+  <rect x="24" y="48" width="1152" height="52" rx="10" fill="#0f141c" stroke="#7f1d1d"/>
+  <rect x="40" y="58" width="120" height="32" rx="8" fill="#dc2626"/>
+  <text x="100" y="80" fill="#fff" font-family="system-ui,sans-serif" font-size="15" font-weight="700" text-anchor="middle">STOP</text>
+  <rect x="176" y="58" width="120" height="32" rx="8" fill="#17202b" stroke="#243041"/>
+  <text x="236" y="80" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="15" font-weight="700" text-anchor="middle">UNDO</text>
+  <rect x="312" y="58" width="120" height="32" rx="8" fill="#17202b" stroke="#243041"/>
+  <text x="372" y="80" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="15" font-weight="700" text-anchor="middle">HOLD</text>
+  <text x="60" y="140" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="32" font-weight="700">NeuraShell</text>
+  <text x="60" y="172" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="16">MVP 0.4 · Session Ready · readiness + ARM gate</text>
+  <rect x="60" y="200" width="700" height="220" rx="16" fill="#0f141c" stroke="#243041"/>
+  <text x="84" y="236" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="12" font-weight="600">READINESS</text>
+  <text x="84" y="286" fill="#6ee7b7" font-family="system-ui,sans-serif" font-size="48" font-weight="700">86</text>
+  <text x="160" y="286" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="18">/100 · ready</text>
+  <rect x="84" y="310" width="640" height="10" rx="5" fill="#18181b"/>
+  <rect x="84" y="310" width="550" height="10" rx="5" fill="#34d399"/>
+  <circle cx="100" cy="360" r="6" fill="#34d399"/>
+  <text x="118" y="365" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="14">Synthetic · Safe mode ON</text>
+  <rect x="800" y="200" width="300" height="100" rx="14" fill="#052e16" stroke="#166534"/>
+  <text x="950" y="250" fill="#bbf7d0" font-family="system-ui,sans-serif" font-size="22" font-weight="700" text-anchor="middle">ARMED</text>
+  <text x="950" y="278" fill="#86efac" font-family="system-ui,sans-serif" font-size="13" text-anchor="middle">intent actuation on</text>
+  <rect x="800" y="320" width="140" height="44" rx="10" fill="#0e7490"/>
+  <text x="870" y="348" fill="#ecfeff" font-family="system-ui,sans-serif" font-size="14" font-weight="600" text-anchor="middle">Dry-run OS</text>
+  <rect x="960" y="320" width="140" height="44" rx="10" fill="#17202b" stroke="#243041"/>
+  <text x="1030" y="348" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="14" font-weight="600" text-anchor="middle">Calibrate</text>
+  <text x="60" y="480" fill="#67e8f9" font-family="system-ui,sans-serif" font-size="14">computer_side · simulator-first · local profiles · MIT</text>
+  <text x="60" y="520" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="13">Beach · Binder · Bridge · Intent→OS · Shell (control plane)</text>
+  <text x="60" y="620" fill="#475569" font-family="system-ui,sans-serif" font-size="12">neurashell-eta.vercel.app · col-neura-suite</text>
 </svg>

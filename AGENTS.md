@@ -4,46 +4,49 @@ You are working on **NeuraShell only** unless the user asks to edit another suit
 
 ## Product
 
-Computer-side **control plane** for high-bandwidth intent users (modes, panic, profiles, session ready).  
-Not implant software. Not medical. Not Neuralink-affiliated. Not Binder (TCG). Not NFA (flow). Not Beach (catalog).
+Computer-side **control plane** for high-bandwidth intent users.  
+**MVP shipped:** 0.4.0 — see `SHIP.md`, `CHANGELOG.md`, `docs/WHAT-IS-NEURASHELL.md`.
 
-## v0.4 boundaries
+Not implant software. Not medical. Not Neuralink-affiliated.  
+Not Binder (TCG). Not NFA (flow). Not Beach (catalog).
+
+## MVP boundaries (0.4.0)
 
 - Simulator-first: synthetic + keyboard always work.
-- Optional Bridge: soft WS / BroadcastChannel only; degrade if missing.
+- Optional Bridge: soft WS / BroadcastChannel only.
 - Intent vocab: `velocity_2d` | `class_label` | `switch_binary` | `synthetic`.
-- Outputs: `ui_only` + optional `os_mouse` via dry-run / local POST (never implant).
-- Actuate OS: default dry-run; live requires ARM + Safe confirm; STOP → dry-run.
-- Relay: `pnpm os:relay` → `scripts/os-intent-relay.mjs` on :8765.
-- Freeze UI: STOP/HOLD → freezeReason + FreezeOverlay; panic bar remains above.
-- Calibration: `/calibrate` writes profile (+ `calibratedAt`); no cloud.
-- Readiness: `lib/readiness.ts` score; ARM required for shell actuation (except replay/cal).
-- Record/replay: local JSON only (`lib/intents/recording.ts`); STOP cancels replay.
-- Do not add implant SDKs, medical features, accounts, or monorepo merges.
+- Outputs: `ui_only` + optional `os_mouse` (dry-run / local POST).
+- Actuate OS: dry-run default; live needs ARM + Safe confirm; STOP → dry-run.
+- Freeze UI, calibration, readiness + ARM, record/replay — all in scope as shipped.
+- Do **not** add implant SDKs, medical features, accounts, monorepo merges, or cloud neural data without explicit ask.
 
 ## Layout
 
 ```
-src/app/           routes: / /demo /calibrate /a11y /settings
-src/components/    panic-bar, freeze-overlay, calibration-wizard, …
-src/lib/intents/   types + adapters
-src/lib/profiles/  JSON schema + localStorage
-src/lib/bridge/    optional remote stub
+src/app/           / /demo /calibrate /a11y /settings
+src/components/    panic, freeze, session-ready, actuate-os, …
+src/lib/intents/   adapters + recording
+src/lib/os-actuate/  Intent→OS samples
+src/lib/profiles/  local JSON
 src/lib/store.ts   Zustand
+docs/              WHAT-IS-NEURASHELL.md
+SHIP.md            MVP ship checklist
+CHANGELOG.md
 ```
 
 ## Commands
 
 ```bash
 pnpm dev
-pnpm build
 pnpm test
+pnpm build
+pnpm os:relay   # optional local OS live POST target
 ```
 
 ## Commits
 
 Author: Joe \<pileofflapjacks1@gmail.com\>
 
-## Beach re-seed
+## Beach
 
-After deploy, update absolute `/demo` URL in `LISTING.md` + `neurabeach-manifest.json`, then a Beach-only pass adds `seed-proj-neurashell` to `col-neura-suite`.
+Listing already live. Re-seed from `LISTING.md` + `neurabeach-manifest.json` when version or demo URL changes.
