@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { IntentHost } from "@/components/intent-host";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
 import { PanicBar } from "@/components/panic-bar";
+import { FreezeOverlay } from "@/components/freeze-overlay";
 import { ShellNav } from "@/components/shell-nav";
 import { ProfilePanel } from "@/components/profile-panel";
 import { useShellStore } from "@/lib/store";
@@ -24,12 +26,21 @@ export default function SettingsPage() {
       <IntentHost />
       <DisclaimerBanner />
       <PanicBar />
+      <FreezeOverlay />
       <ShellNav active="/settings" />
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-3 py-6 sm:px-4">
         <h1 className="text-2xl font-bold">Settings</h1>
         <p className="text-sm text-shell-muted">
           Advanced profile: dwell, thresholds, switch timing. Saved locally only.
         </p>
+        <Link href="/calibrate" className="shell-btn shell-btn-primary inline-flex min-h-12 px-4 no-underline">
+          Open calibration wizard
+        </Link>
+        {profile.calibratedAt && (
+          <p className="text-xs text-shell-muted">
+            Last calibrated: {new Date(profile.calibratedAt).toLocaleString()}
+          </p>
+        )}
         <ProfilePanel />
         <section className="rounded-xl border border-shell-border bg-shell-panel p-4">
           <h2 className="mb-3 text-sm font-semibold tracking-wide text-shell-muted uppercase">

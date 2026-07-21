@@ -26,6 +26,7 @@ pnpm dev
 
 - Shell: [http://localhost:3000](http://localhost:3000)
 - Scripted tour: [http://localhost:3000/demo](http://localhost:3000/demo)
+- Calibration: [http://localhost:3000/calibrate](http://localhost:3000/calibrate)
 - A11y scorecard: [http://localhost:3000/a11y](http://localhost:3000/a11y)
 
 ```bash
@@ -35,14 +36,16 @@ pnpm test
 
 No accounts. No env secrets for v0.1 demo.
 
-## What ships in v0.1
+## What ships in v0.2
 
 | Area | Behavior |
 |------|----------|
 | **Session Ready** | disconnected / synthetic / bridge-sim / bridge-remote labels; one-click synthetic; confidence meter; Safe mode |
 | **Modes** | exactly one of `point` · `click` · `type` · `switch` · `idle` (Safe mode requires confirm) |
 | **Panic bar** | STOP · UNDO · HOLD — sticky, large targets; Esc / ⌘Z / Space |
-| **Profiles** | localStorage + export/import JSON (NeuralBridge-friendly fields) |
+| **Freeze UI** | Full overlay for STOP/HOLD with reason, elapsed timer, large RELEASE (panic bar stays on top) |
+| **Calibration** | `/calibrate` wizard: Safe mode, confidence, dwell, switch timing, optional dwell practice → local profile |
+| **Profiles** | localStorage + export/import JSON (NeuralBridge-friendly fields; `calibratedAt`) |
 | **Intents** | synthetic walk, keyboard sim, optional Bridge WS `ws://127.0.0.1:7711` / BroadcastChannel |
 | **Demo** | `/demo` ~60s scripted tour, keyboard-complete |
 

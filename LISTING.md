@@ -6,7 +6,7 @@
 |-------|--------|
 | **Slug** | `neurashell` |
 | **Title** | NeuraShell |
-| **Version** | `0.1.0` |
+| **Version** | `0.2.0` |
 | **Category** | `accessibility` |
 | **Featured** | yes |
 | **Collection** | `col-neura-suite` |
@@ -31,7 +31,7 @@
 
 ## Short description (catalog card)
 
-> Daily-driver computer-side control plane for high-bandwidth intent users: mode switch, panic stop/undo, confidence, local profiles, session ready. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.
+> Daily-driver computer-side control plane for high-bandwidth intent users: mode switch, panic stop/undo, freeze UI, calibration wizard, confidence, local profiles, session ready. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.
 
 ---
 

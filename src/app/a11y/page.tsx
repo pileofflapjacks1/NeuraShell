@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
 import { PanicBar } from "@/components/panic-bar";
+import { FreezeOverlay } from "@/components/freeze-overlay";
 import { ShellNav } from "@/components/shell-nav";
 import { IntentHost } from "@/components/intent-host";
 import { useShellStore } from "@/lib/store";
@@ -20,6 +21,10 @@ export default function A11yPage() {
   const hydrate = useShellStore((s) => s.hydrate);
   const safeMode = useShellStore((s) => s.safeMode);
   const setSafeMode = useShellStore((s) => s.setSafeMode);
+  const calibratedAt = useShellStore((s) => s.profile.calibratedAt);
+  const panicHold = useShellStore((s) => s.panicHold);
+  const releaseHold = useShellStore((s) => s.releaseHold);
+  const freezeReason = useShellStore((s) => s.freezeReason);
   const [live, setLive] = useState({
     reducedMotion: false,
     highContrast: false,
@@ -51,13 +56,28 @@ export default function A11yPage() {
       id: "panic-sticky",
       label: "Panic bar always reachable",
       pass: true,
-      detail: "Sticky top bar; STOP / UNDO / HOLD ≥ ~48px hit targets.",
+      detail: "Sticky top bar above freeze overlay; STOP / UNDO / HOLD ≥ ~48px hit targets.",
+    },
+    {
+      id: "freeze-ui",
+      label: "Freeze overlay (STOP/HOLD)",
+      pass: true,
+      detail:
+        "alertdialog with large RELEASE, elapsed timer, reason copy; Space releases. Try HOLD below.",
+    },
+    {
+      id: "calibration",
+      label: "Calibration wizard path",
+      pass: true,
+      detail: calibratedAt
+        ? `Profile calibrated at ${new Date(calibratedAt).toLocaleString()}.`
+        : "Wizard at /calibrate — recommended once per profile.",
     },
     {
       id: "keyboard-path",
       label: "Keyboard-only control path",
       pass: true,
-      detail: "Esc=STOP, ⌘Z=UNDO, Space=confirm, WASD/arrows velocity, 1–4 switch.",
+      detail: "Esc=STOP, ⌘Z=UNDO, Space=confirm/release, WASD/arrows velocity, 1–4 switch.",
     },
     {
       id: "safe-mode",
@@ -112,11 +132,12 @@ export default function A11yPage() {
       <IntentHost />
       <DisclaimerBanner />
       <PanicBar />
+      <FreezeOverlay />
       <ShellNav active="/a11y" />
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-3 py-6 sm:px-4">
         <h1 className="text-2xl font-bold">Accessibility scorecard</h1>
         <p className="text-sm text-shell-muted">
-          Light static + live checks for NeuraShell v0.1. Not a full WCAG audit.
+          Light static + live checks for NeuraShell v0.2. Not a full WCAG audit.
         </p>
 
         <div className="rounded-xl border border-shell-border bg-shell-panel p-5">
@@ -138,6 +159,19 @@ export default function A11yPage() {
           >
             Toggle Safe mode ({safeMode ? "ON" : "OFF"})
           </button>
+          <button
+            type="button"
+            className="shell-btn shell-btn-secondary min-h-12 px-4"
+            onClick={() => {
+              if (freezeReason) releaseHold();
+              else panicHold();
+            }}
+          >
+            {freezeReason ? "Release freeze" : "Preview HOLD freeze UI"}
+          </button>
+          <Link href="/calibrate" className="shell-btn shell-btn-secondary min-h-12 px-4 no-underline">
+            Calibration wizard
+          </Link>
           <Link href="/demo" className="shell-btn shell-btn-secondary min-h-12 px-4 no-underline">
             Open /demo tour
           </Link>

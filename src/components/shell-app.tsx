@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import { IntentHost, type IntentSessionApi } from "@/components/intent-host";
 import { SessionReady } from "@/components/session-ready";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { PanicBar } from "@/components/panic-bar";
+import { FreezeOverlay } from "@/components/freeze-overlay";
 import { ConfidenceMeter } from "@/components/confidence-meter";
 import { ProfilePanel } from "@/components/profile-panel";
 import { PointCanvas } from "@/components/point-canvas";
@@ -12,10 +14,12 @@ import { SwitchScan } from "@/components/switch-scan";
 import { TypeBoard } from "@/components/type-board";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
 import { ShellNav } from "@/components/shell-nav";
+import { useShellStore } from "@/lib/store";
 
 export function ShellApp({ navActive = "/" }: { navActive?: string }) {
   const apiRef = useRef<IntentSessionApi | null>(null);
   const [, bump] = useState(0);
+  const calibratedAt = useShellStore((s) => s.profile.calibratedAt);
 
   const onAdaptersReady = useCallback((api: IntentSessionApi) => {
     apiRef.current = api;
@@ -27,18 +31,37 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
       <IntentHost onAdaptersReady={onAdaptersReady} />
       <DisclaimerBanner />
       <PanicBar />
+      <FreezeOverlay />
       <ShellNav active={navActive} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 space-y-4 px-3 py-4 sm:space-y-5 sm:px-4 sm:py-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Control plane
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-shell-muted sm:text-base">
-            Daily-driver shell for high-bandwidth intent: session ready, modes, panic stop/undo,
-            local profiles. Simulator-first.
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Control plane
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm text-shell-muted sm:text-base">
+              Daily-driver shell for high-bandwidth intent: session ready, modes, panic stop/undo,
+              local profiles. Simulator-first.
+            </p>
+          </div>
+          <Link
+            href="/calibrate"
+            className="shell-btn shell-btn-primary min-h-12 px-4 no-underline text-sm"
+          >
+            {calibratedAt ? "Recalibrate" : "Calibrate"}
+          </Link>
         </div>
+
+        {!calibratedAt && (
+          <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/30 px-4 py-3 text-sm text-cyan-50">
+            No calibration on this profile yet.{" "}
+            <Link href="/calibrate" className="font-semibold underline-offset-2 hover:underline">
+              Run the wizard
+            </Link>{" "}
+            to set dwell, confidence threshold, and Safe defaults.
+          </div>
+        )}
 
         <SessionReady
           onStartSynthetic={() => apiRef.current?.startSynthetic()}
@@ -65,7 +88,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
       </main>
 
       <footer className="border-t border-shell-border py-4 text-center text-xs text-shell-muted">
-        NeuraShell v0.1 · suite_role: app · computer_side · MIT ·{" "}
+        NeuraShell v0.2 · suite_role: app · computer_side · MIT ·{" "}
         <a href="https://neurabeach.com" className="text-cyan-400 underline-offset-2 hover:underline">
           NeuraBeach
         </a>

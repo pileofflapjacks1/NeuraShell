@@ -15,12 +15,17 @@ export type UndoAction =
   | { kind: "click_target"; targetId: string | null; prevId: string | null }
   | { kind: "safe_mode"; from: boolean; to: boolean };
 
+/** Why actuation is frozen — drives freeze UI copy. */
+export type FreezeReason = "stop" | "hold" | null;
+
 export interface ShellState {
   connection: ConnectionState;
   mode: ShellMode;
   safeMode: boolean;
   hold: boolean;
   frozen: boolean;
+  freezeReason: FreezeReason;
+  frozenAt: number | null;
   confidence: number;
   lastIntentAt: number | null;
   profile: ShellProfile;
@@ -39,6 +44,8 @@ export interface ShellState {
   undoStack: UndoAction[];
   // Hydration
   hydrated: boolean;
+  // Calibration wizard open (shell home can deep-link)
+  calibrating: boolean;
 
   // Actions
   hydrate: () => void;
@@ -61,6 +68,8 @@ export interface ShellState {
   backspaceTyped: () => void;
   setClickTarget: (id: string | null) => void;
   setSwitchIndex: (i: number) => void;
+  setCalibrating: (on: boolean) => void;
+  completeCalibration: (partial: Partial<ShellProfile>) => void;
 }
 
 const MAX_UNDO = 40;
@@ -71,6 +80,8 @@ export const useShellStore = create<ShellState>((set, get) => ({
   safeMode: true,
   hold: false,
   frozen: false,
+  freezeReason: null,
+  frozenAt: null,
   confidence: 0,
   lastIntentAt: null,
   profile: { ...DEFAULT_PROFILE },
@@ -82,6 +93,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
   statusMessage: "Disconnected — start a synthetic session to begin.",
   undoStack: [],
   hydrated: false,
+  calibrating: false,
 
   hydrate: () => {
     if (get().hydrated) return;
@@ -91,7 +103,9 @@ export const useShellStore = create<ShellState>((set, get) => ({
       safeMode: profile.safeMode,
       mode: profile.defaultMode,
       hydrated: true,
-      statusMessage: "Ready. Start synthetic session or use keyboard sim.",
+      statusMessage: profile.calibratedAt
+        ? "Ready. Start synthetic session or use keyboard sim."
+        : "Ready. Run Calibration for dwell / threshold defaults (recommended).",
     });
   },
 
@@ -172,22 +186,32 @@ export const useShellStore = create<ShellState>((set, get) => ({
       pendingMode: null,
       frozen: true,
       hold: false,
-      statusMessage: "STOP — actuation frozen, mode → idle. Start session or release via HOLD confirm.",
+      freezeReason: "stop",
+      frozenAt: Date.now(),
+      statusMessage: "STOP — actuation frozen, mode → idle. Release to resume control.",
     });
   },
 
   panicHold: () => {
     set({
       hold: true,
-      statusMessage: "HOLD — temporary freeze. Press Confirm / Space to release.",
+      freezeReason: "hold",
+      frozenAt: Date.now(),
+      statusMessage: "HOLD — temporary freeze. Press RELEASE / Space to continue.",
     });
   },
 
   releaseHold: () => {
+    const reason = get().freezeReason;
     set({
       hold: false,
       frozen: false,
-      statusMessage: "Hold released — actuation available.",
+      freezeReason: null,
+      frozenAt: null,
+      statusMessage:
+        reason === "stop"
+          ? "STOP released — actuation available (mode still idle until you switch)."
+          : "Hold released — actuation available.",
     });
   },
 
@@ -226,13 +250,22 @@ export const useShellStore = create<ShellState>((set, get) => ({
   applyIntent: (event) => {
     const state = get();
     if (state.hold || state.frozen) {
-      // Still update confidence for monitoring, no actuation
+      // Monitoring only while frozen — no actuation
       if (event.type === "class_label") {
         set({ confidence: event.confidence, lastIntentAt: event.t });
+      } else if (event.type === "velocity_2d") {
+        const speed = Math.hypot(event.vx, event.vy);
+        set({ confidence: clamp01(0.3 + speed * 0.5), lastIntentAt: event.t });
+      } else {
+        set({ lastIntentAt: event.t });
       }
       return;
     }
-    if (state.connection === "disconnected") return;
+    if (state.connection === "disconnected" && event.type !== "synthetic") {
+      // Allow keyboard velocity only when connected? Keep keyboard for confidence during cal.
+      // Still accept intents for calibration confidence sampling if calibrating.
+      if (!state.calibrating) return;
+    }
 
     set({ lastIntentAt: event.t });
 
@@ -267,14 +300,12 @@ export const useShellStore = create<ShellState>((set, get) => ({
       }
 
       if (state.mode === "click" && (event.label === "confirm" || event.label === "select")) {
-        // Highlight nearest soft target based on cursor quadrant
         const id = quadrantTarget(state.cursor.x, state.cursor.y);
         get().setClickTarget(id);
         return;
       }
 
       if (state.mode === "type" && event.label === "confirm") {
-        // Confirm is handled by type board selection path via switchIndex
         return;
       }
       return;
@@ -282,12 +313,6 @@ export const useShellStore = create<ShellState>((set, get) => ({
 
     if (event.type === "switch_binary" && event.active) {
       set({ confidence: 0.8, switchIndex: event.index });
-      if (state.mode === "switch") {
-        // index selects scan item
-      }
-      if (state.mode === "type") {
-        // switch index maps to keyboard row keys — host UI handles
-      }
     }
   },
 
@@ -320,7 +345,6 @@ export const useShellStore = create<ShellState>((set, get) => ({
   backspaceTyped: () => {
     const { typed } = get();
     if (!typed) return;
-    // Treat backspace as undoing last typed char when possible
     const stack = [...get().undoStack];
     const last = stack[stack.length - 1];
     if (last?.kind === "type_char" && typed.endsWith(last.char)) {
@@ -339,6 +363,23 @@ export const useShellStore = create<ShellState>((set, get) => ({
   },
 
   setSwitchIndex: (switchIndex) => set({ switchIndex }),
+
+  setCalibrating: (calibrating) => set({ calibrating }),
+
+  completeCalibration: (partial) => {
+    const profile = sanitizeProfile({
+      ...get().profile,
+      ...partial,
+      calibratedAt: new Date().toISOString(),
+    });
+    saveProfile(profile);
+    set({
+      profile,
+      safeMode: profile.safeMode,
+      calibrating: false,
+      statusMessage: `Calibration saved to “${profile.name}”.`,
+    });
+  },
 }));
 
 function clamp01(n: number) {

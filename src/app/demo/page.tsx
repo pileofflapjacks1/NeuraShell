@@ -5,6 +5,7 @@ import Link from "next/link";
 import { IntentHost, type IntentSessionApi } from "@/components/intent-host";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
 import { PanicBar } from "@/components/panic-bar";
+import { FreezeOverlay } from "@/components/freeze-overlay";
 import { ShellNav } from "@/components/shell-nav";
 import { SessionReady } from "@/components/session-ready";
 import { ModeSwitcher } from "@/components/mode-switcher";
@@ -173,6 +174,7 @@ export default function DemoPage() {
       <IntentHost onAdaptersReady={onAdaptersReady} />
       <DisclaimerBanner />
       <PanicBar />
+      <FreezeOverlay />
       <ShellNav active="/demo" />
 
       <main className="mx-auto w-full max-w-6xl flex-1 space-y-4 px-3 py-4 sm:px-4 sm:py-6">

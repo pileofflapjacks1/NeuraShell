@@ -9,9 +9,10 @@ import type { ShellMode } from "@/lib/intents/types";
  * - switchTimingMs → switch scan period
  * - defaultMode → session mode after connect
  * - safeMode → raise confirm thresholds / larger targets
+ * - calibratedAt → last successful calibration wizard finish (ISO)
  */
 export interface ShellProfile {
-  version: "0.1.0";
+  version: "0.1.0" | "0.2.0";
   name: string;
   defaultMode: ShellMode;
   dwellMs: number;
@@ -19,11 +20,12 @@ export interface ShellProfile {
   safeMode: boolean;
   switchTimingMs: number;
   switchCount: 2 | 3 | 4;
+  calibratedAt: string | null;
   updatedAt: string;
 }
 
 export const DEFAULT_PROFILE: ShellProfile = {
-  version: "0.1.0",
+  version: "0.2.0",
   name: "Default",
   defaultMode: "idle",
   dwellMs: 600,
@@ -31,14 +33,16 @@ export const DEFAULT_PROFILE: ShellProfile = {
   safeMode: true,
   switchTimingMs: 900,
   switchCount: 4,
+  calibratedAt: null,
   updatedAt: new Date(0).toISOString(),
 };
 
 export function isShellProfile(value: unknown): value is ShellProfile {
   if (!value || typeof value !== "object") return false;
   const p = value as Record<string, unknown>;
+  const versionOk = p.version === "0.1.0" || p.version === "0.2.0";
   return (
-    p.version === "0.1.0" &&
+    versionOk &&
     typeof p.name === "string" &&
     typeof p.dwellMs === "number" &&
     typeof p.confidenceThreshold === "number" &&
@@ -57,8 +61,15 @@ export function sanitizeProfile(raw: Partial<ShellProfile> & { name?: string }):
     ? (raw.switchCount as 2 | 3 | 4)
     : DEFAULT_PROFILE.switchCount;
 
+  const calibratedAt =
+    raw.calibratedAt === null
+      ? null
+      : typeof raw.calibratedAt === "string"
+        ? raw.calibratedAt
+        : DEFAULT_PROFILE.calibratedAt;
+
   return {
-    version: "0.1.0",
+    version: "0.2.0",
     name: (raw.name ?? DEFAULT_PROFILE.name).slice(0, 64),
     defaultMode,
     dwellMs: clamp(Number(raw.dwellMs ?? DEFAULT_PROFILE.dwellMs), 100, 5000),
@@ -74,6 +85,7 @@ export function sanitizeProfile(raw: Partial<ShellProfile> & { name?: string }):
       5000
     ),
     switchCount,
+    calibratedAt,
     updatedAt: new Date().toISOString(),
   };
 }
