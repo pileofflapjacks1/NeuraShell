@@ -13,6 +13,14 @@ import {
   MAX_RECORDED_EVENTS,
   type IntentRecording,
 } from "@/lib/intents/recording";
+import {
+  DEFAULT_OS_ENDPOINT,
+  MAX_OS_PREVIEW,
+  type OsActuateMode,
+  type OsPreviewLine,
+} from "@/lib/os-actuate/types";
+import { formatOsPreview, intentToOsSample } from "@/lib/os-actuate/mapper";
+import { postOsSample } from "@/lib/os-actuate/client";
 
 export type UndoAction =
   | { kind: "mode"; from: ShellMode; to: ShellMode }
@@ -57,6 +65,18 @@ export interface ShellState {
   /** Replay runtime flag (scheduler lives in IntentHost) */
   replaying: boolean;
 
+  /**
+   * Actuate OS path (suite glue → Intent→OS).
+   * Default dry-run: preview only. Live posts to local endpoint.
+   */
+  osMode: OsActuateMode;
+  osEndpoint: string;
+  osPreview: OsPreviewLine[];
+  osLastSampleAt: number | null;
+  osLiveOk: boolean | null;
+  osPostCount: number;
+  osErrorCount: number;
+
   // Actions
   hydrate: () => void;
   setConnection: (c: ConnectionState) => void;
@@ -89,10 +109,18 @@ export interface ShellState {
   clearRecording: () => void;
   loadRecording: (rec: IntentRecording) => void;
   setReplaying: (on: boolean) => void;
+
+  setOsMode: (mode: OsActuateMode) => void;
+  setOsEndpoint: (url: string) => void;
+  clearOsPreview: () => void;
+  enableOsLive: () => boolean;
+  pushOsPreview: (line: Omit<OsPreviewLine, "id">) => void;
 }
 
 const MAX_UNDO = 40;
 const MAX_SAMPLES = 48;
+let osPreviewSeq = 0;
+let lastOsPreviewMs = 0;
 
 export const useShellStore = create<ShellState>((set, get) => ({
   connection: "disconnected",
@@ -121,6 +149,13 @@ export const useShellStore = create<ShellState>((set, get) => ({
   recordedEvents: [],
   lastRecording: null,
   replaying: false,
+  osMode: "off",
+  osEndpoint: DEFAULT_OS_ENDPOINT,
+  osPreview: [],
+  osLastSampleAt: null,
+  osLiveOk: null,
+  osPostCount: 0,
+  osErrorCount: 0,
 
   hydrate: () => {
     if (get().hydrated) return;
@@ -222,6 +257,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
         "stop-capture"
       );
     }
+    const prevOs = get().osMode;
     set({
       mode: "idle",
       pendingMode: null,
@@ -234,8 +270,18 @@ export const useShellStore = create<ShellState>((set, get) => ({
       recordingStartedAt: null,
       replaying: false,
       lastRecording,
-      statusMessage: "STOP — disarmed, frozen, mode → idle. RELEASE then re-ARM to actuate.",
+      // Safety: live OS path always drops to dry-run or off on STOP
+      osMode: prevOs === "live" ? "dry-run" : prevOs,
+      statusMessage:
+        "STOP — disarmed, frozen, mode → idle. OS live disabled. RELEASE then re-ARM to actuate.",
     });
+    if (prevOs === "live") {
+      get().pushOsPreview({
+        at: Date.now(),
+        kind: "info",
+        text: "STOP — live OS posts halted (now dry-run)",
+      });
+    }
   },
 
   panicHold: () => {
@@ -351,11 +397,14 @@ export const useShellStore = create<ShellState>((set, get) => ({
           },
         }));
       }
+      // OS path: stream velocity when shell would actuate (or dry-run with session)
+      maybeEmitOs(get, event);
       return;
     }
 
     if (event.type === "class_label") {
       pushSample(event.confidence, event.t);
+      maybeEmitOs(get, event);
       if (!mayActuate) return;
 
       const threshold = state.profile.confidenceThreshold * (state.safeMode ? 1.05 : 1);
@@ -376,6 +425,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
 
     if (event.type === "switch_binary" && event.active) {
       pushSample(0.8, event.t);
+      maybeEmitOs(get, event);
       if (mayActuate) {
         set({ switchIndex: event.index });
       }
@@ -465,10 +515,68 @@ export const useShellStore = create<ShellState>((set, get) => ({
   },
 
   disarm: () => {
+    const osMode = get().osMode === "live" ? "dry-run" : get().osMode;
     set({
       armed: false,
-      statusMessage: "Disarmed — monitoring only (no intent actuation).",
+      osMode,
+      statusMessage: "Disarmed — monitoring only (no intent actuation). OS live off.",
     });
+  },
+
+  setOsMode: (mode) => {
+    if (mode === "live") {
+      get().enableOsLive();
+      return;
+    }
+    set({
+      osMode: mode,
+      statusMessage:
+        mode === "dry-run"
+          ? "OS actuate: dry-run (preview only — no pointer)."
+          : "OS actuate: off.",
+    });
+    get().pushOsPreview({
+      at: Date.now(),
+      kind: "info",
+      text: mode === "dry-run" ? "Dry-run preview enabled" : "OS path off",
+    });
+  },
+
+  setOsEndpoint: (url) => {
+    const trimmed = url.trim().slice(0, 200) || DEFAULT_OS_ENDPOINT;
+    set({ osEndpoint: trimmed, osLiveOk: null });
+  },
+
+  clearOsPreview: () => set({ osPreview: [], osPostCount: 0, osErrorCount: 0 }),
+
+  enableOsLive: () => {
+    const s = get();
+    if (s.hold || s.frozen) {
+      set({ statusMessage: "Cannot enable OS live while frozen." });
+      return false;
+    }
+    if (!s.armed && !s.replaying) {
+      set({ statusMessage: "ARM the shell before enabling OS live posts." });
+      return false;
+    }
+    set({
+      osMode: "live",
+      statusMessage: `OS live → POST ${s.osEndpoint} (STOP drops to dry-run).`,
+    });
+    get().pushOsPreview({
+      at: Date.now(),
+      kind: "info",
+      text: `Live enabled → ${s.osEndpoint}`,
+    });
+    return true;
+  },
+
+  pushOsPreview: (line) => {
+    osPreviewSeq += 1;
+    const entry: OsPreviewLine = { ...line, id: osPreviewSeq };
+    set((st) => ({
+      osPreview: [entry, ...st.osPreview].slice(0, MAX_OS_PREVIEW),
+    }));
   },
 
   startRecording: () => {
@@ -529,6 +637,93 @@ export const useShellStore = create<ShellState>((set, get) => ({
 function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
 }
+
+/**
+ * Forward intents to OS dry-run preview and optional live HTTP POST.
+ * Dry-run never touches the system pointer — browser cannot move OS mouse without
+ * a local helper; live mode only POSTs JSON to localhost for Intent→OS / relay.
+ */
+function maybeEmitOs(get: () => ShellState, event: IntentEvent) {
+  const state = get();
+  if (state.osMode === "off") return;
+  if (state.hold || state.frozen) return;
+
+  // Dry-run can preview with a session; live requires ARM (or replay)
+  const mayStream =
+    state.osMode === "dry-run"
+      ? state.connection !== "disconnected" || state.replaying || state.calibrating
+      : state.armed || state.replaying;
+
+  if (!mayStream) return;
+
+  // Prefer OS stream in point/click; still allow click events in other modes
+  if (
+    event.type === "velocity_2d" &&
+    state.mode !== "point" &&
+    state.mode !== "click" &&
+    state.mode !== "idle"
+  ) {
+    // still allow in idle for monitoring dry-run
+  }
+
+  const sample = intentToOsSample(event, {
+    clickThreshold: state.profile.confidenceThreshold,
+  });
+  if (!sample) return;
+
+  const now = Date.now();
+  const isClick = sample.click >= 0.85;
+  const moving = Math.hypot(sample.vx, sample.vy) > 0.04;
+  // Throttle preview lines for continuous velocity
+  if (!isClick && moving && now - lastOsPreviewMs < 90) {
+    if (state.osMode === "live") {
+      // still post live at higher rate, but don't flood the log
+      void postLive(get, sample);
+    }
+    return;
+  }
+  if (!isClick && !moving && now - lastOsPreviewMs < 400) return;
+  lastOsPreviewMs = now;
+
+  const mode = state.osMode === "live" ? "live" : "dry-run";
+  const fmt = formatOsPreview(sample, mode === "live" ? "live" : "dry-run", false);
+  get().pushOsPreview({ at: now, kind: fmt.kind, text: fmt.text });
+  setOsLast(get, now);
+
+  if (state.osMode === "live") {
+    void postLive(get, sample);
+  }
+}
+
+function setOsLast(get: () => ShellState, at: number) {
+  useShellStore.setState({ osLastSampleAt: at });
+}
+
+async function postLive(get: () => ShellState, sample: ReturnType<typeof intentToOsSample>) {
+  if (!sample) return;
+  const { osEndpoint } = get();
+  const result = await postOsSample(osEndpoint, sample);
+  if (result.ok) {
+    useShellStore.setState((s) => ({
+      osLiveOk: true,
+      osPostCount: s.osPostCount + 1,
+    }));
+  } else {
+    useShellStore.setState((s) => ({
+      osLiveOk: false,
+      osErrorCount: s.osErrorCount + 1,
+    }));
+    // Don't spam errors every frame
+    if (get().osErrorCount <= 3 || get().osErrorCount % 25 === 0) {
+      get().pushOsPreview({
+        at: Date.now(),
+        kind: "error",
+        text: `POST failed: ${result.error ?? "unknown"} (is relay running?)`,
+      });
+    }
+  }
+}
+
 
 function pushUndo(
   set: (partial: Partial<ShellState> | ((s: ShellState) => Partial<ShellState>)) => void,

@@ -79,6 +79,13 @@ export default function A11yPage() {
       detail: "Capture intents to JSON, replay timeline, no cloud upload.",
     },
     {
+      id: "actuate-os",
+      label: "Actuate OS dry-run default",
+      pass: true,
+      detail:
+        "OS path defaults to dry-run preview; live needs ARM + confirm; STOP drops live → dry-run.",
+    },
+    {
       id: "calibration",
       label: "Calibration wizard path",
       pass: true,

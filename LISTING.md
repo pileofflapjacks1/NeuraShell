@@ -6,7 +6,7 @@
 |-------|--------|
 | **Slug** | `neurashell` |
 | **Title** | NeuraShell |
-| **Version** | `0.3.0` |
+| **Version** | `0.4.0` |
 | **Category** | `accessibility` |
 | **Featured** | yes |
 | **Collection** | `col-neura-suite` |
@@ -24,14 +24,14 @@
 | **banned_claims** | `true` |
 | **permissions** | `none` |
 | **inputs** | `velocity_2d`, `class_label`, `switch_binary`, `synthetic` |
-| **outputs** | `ui_only` (v0.1; future `os_mouse` via adapter) |
+| **outputs** | `ui_only`, `os_mouse` (dry-run default; live = local POST only) |
 | **hardware** | `synthetic`, `generic_intent`, `websocket_intent` |
 
 ---
 
 ## Short description (catalog card)
 
-> Daily-driver computer-side control plane for high-bandwidth intent users: readiness score, ARM gate, mode switch, panic stop/undo, freeze UI, calibration, local intent record/replay, profiles. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.
+> Daily-driver computer-side control plane: readiness, ARM gate, freeze UI, calibration, record/replay, Actuate OS dry-run (optional live local POST to Intent→OS-style endpoint). Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.
 
 ---
 

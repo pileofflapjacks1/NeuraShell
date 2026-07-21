@@ -30,6 +30,13 @@ function resetStore() {
     recordedEvents: [],
     lastRecording: null,
     replaying: false,
+    osMode: "off",
+    osEndpoint: "http://127.0.0.1:8765/intent",
+    osPreview: [],
+    osLastSampleAt: null,
+    osLiveOk: null,
+    osPostCount: 0,
+    osErrorCount: 0,
   });
 }
 
@@ -163,5 +170,34 @@ describe("shell store panic + modes", () => {
   it("cannot arm when frozen", () => {
     useShellStore.getState().panicStop();
     expect(useShellStore.getState().arm()).toBe(false);
+  });
+
+  it("dry-run OS previews velocity without live posts", () => {
+    useShellStore.getState().setOsMode("dry-run");
+    useShellStore.getState().applyIntent({
+      type: "velocity_2d",
+      vx: 0.8,
+      vy: 0,
+      t: Date.now(),
+    });
+    const s = useShellStore.getState();
+    expect(s.osMode).toBe("dry-run");
+    expect(s.osPreview.length).toBeGreaterThan(0);
+    expect(s.osPostCount).toBe(0);
+  });
+
+  it("STOP drops live OS to dry-run", () => {
+    useShellStore.getState().arm();
+    useShellStore.setState({ osMode: "live" });
+    useShellStore.getState().panicStop();
+    expect(useShellStore.getState().osMode).toBe("dry-run");
+    expect(useShellStore.getState().armed).toBe(false);
+  });
+
+  it("enableOsLive requires ARM", () => {
+    expect(useShellStore.getState().enableOsLive()).toBe(false);
+    useShellStore.getState().arm();
+    expect(useShellStore.getState().enableOsLive()).toBe(true);
+    expect(useShellStore.getState().osMode).toBe("live");
   });
 });

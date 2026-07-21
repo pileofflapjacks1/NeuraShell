@@ -13,6 +13,7 @@ import { PointCanvas } from "@/components/point-canvas";
 import { SwitchScan } from "@/components/switch-scan";
 import { TypeBoard } from "@/components/type-board";
 import { RecordReplay } from "@/components/record-replay";
+import { ActuateOsPanel } from "@/components/actuate-os-panel";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
 import { ShellNav } from "@/components/shell-nav";
 import { useShellStore } from "@/lib/store";
@@ -43,8 +44,8 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
               Control plane
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-shell-muted sm:text-base">
-              Session readiness + ARM gate · panic freeze · calibration · local intent
-              record/replay. Simulator-first.
+              Readiness + ARM · freeze · calibration · record/replay · Actuate OS dry-run.
+              Simulator-first.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -95,6 +96,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
               onStartReplay={(rec) => apiRef.current?.startReplay(rec)}
               onStopReplay={() => apiRef.current?.stopReplay()}
             />
+            <ActuateOsPanel />
           </div>
           <div className="space-y-4">
             <ConfidenceMeter />
@@ -105,7 +107,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
       </main>
 
       <footer className="border-t border-shell-border py-4 text-center text-xs text-shell-muted">
-        NeuraShell v0.3 · suite_role: app · computer_side · MIT ·{" "}
+        NeuraShell v0.4 · suite_role: app · computer_side · MIT ·{" "}
         <a href="https://neurabeach.com" className="text-cyan-400 underline-offset-2 hover:underline">
           NeuraBeach
         </a>

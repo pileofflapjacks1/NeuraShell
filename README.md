@@ -36,12 +36,13 @@ pnpm test
 
 No accounts. No env secrets for v0.1 demo.
 
-## What ships in v0.3
+## What ships in v0.4
 
 | Area | Behavior |
 |------|----------|
 | **Session Ready** | connection labels + **readiness score (0–100)** + factor checklist |
 | **ARM gate** | intent actuation only when ARMED (or during replay/calibration); STOP disarms |
+| **Actuate OS** | dry-run preview (default path) · optional live POST to local Intent→OS-style endpoint |
 | **Modes** | exactly one of `point` · `click` · `type` · `switch` · `idle` (Safe mode requires confirm) |
 | **Panic bar** | STOP · UNDO · HOLD — sticky, large targets; Esc / ⌘Z / Space |
 | **Freeze UI** | Full overlay for STOP/HOLD with reason, elapsed timer, large RELEASE |
@@ -50,6 +51,21 @@ No accounts. No env secrets for v0.1 demo.
 | **Profiles** | localStorage + export/import JSON (NeuralBridge-friendly fields) |
 | **Intents** | synthetic, keyboard, optional Bridge WS / BroadcastChannel |
 | **Demo** | `/demo` scripted tour including ARM + record |
+
+### Actuate OS (dry-run first)
+
+```bash
+# Terminal A — optional local relay for Live mode
+pnpm os:relay
+# → http://127.0.0.1:8765/intent
+
+# Terminal B — Shell
+pnpm dev
+# Session Ready → synthetic → ARM → Actuate OS → Dry-run (log)
+# Optional: Live (Safe confirm) → POSTs JSON {vx,vy,click,t}
+```
+
+Browser **cannot** move the system mouse by itself. Live mode only talks to localhost; pair with [Intent → OS](https://github.com/pileofflapjacks1/neurabeach/tree/main/packages/intent-to-os) or your own consumer of the relay NDJSON.
 
 ## Keyboard (sim)
 
