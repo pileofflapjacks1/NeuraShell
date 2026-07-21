@@ -14,8 +14,8 @@
 | **Depends on** | `[]` (optional soft NeuralBridge later) |
 | **License** | MIT |
 | **GitHub** | https://github.com/pileofflapjacks1/NeuraShell |
-| **Live demo** | https://neurashell.vercel.app/demo *(update after first deploy)* |
-| **A11y** | https://neurashell.vercel.app/a11y |
+| **Live demo** | https://neurashell-eta.vercel.app/demo |
+| **A11y** | https://neurashell-eta.vercel.app/a11y |
 | **Entrypoint** | same as live demo `/demo` |
 | **Manifest** | `neurabeach-manifest.json` in repo root |
 | **safety_class** | `computer_side` |
@@ -46,9 +46,9 @@ After deploy, prefer absolute live URLs. Repo placeholders:
 Suggested live (post-deploy):
 
 ```
-https://neurashell.vercel.app/screenshots/01-session.svg
-https://neurashell.vercel.app/screenshots/02-modes.svg
-https://neurashell.vercel.app/screenshots/03-demo.svg
+https://neurashell-eta.vercel.app/screenshots/01-session.svg
+https://neurashell-eta.vercel.app/screenshots/02-modes.svg
+https://neurashell-eta.vercel.app/screenshots/03-demo.svg
 ```
 
 ---
@@ -98,7 +98,7 @@ No env secrets required for demo mode.
 {
   "suite_role": "app",
   "depends_on": [],
-  "entrypoint": "https://neurashell.vercel.app/demo",
+  "entrypoint": "https://neurashell-eta.vercel.app/demo",
   "safety_class": "computer_side",
   "runtime": "web",
   "banned_claims": true

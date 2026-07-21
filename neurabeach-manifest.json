@@ -29,8 +29,8 @@
   "latency_class": "interactive",
   "platforms": ["web", "macos", "windows", "linux"],
   "calibration": "optional",
-  "entrypoint": "https://neurashell.vercel.app/demo",
-  "demo_video_url": "https://neurashell.vercel.app/demo",
+  "entrypoint": "https://neurashell-eta.vercel.app/demo",
+  "demo_video_url": "https://neurashell-eta.vercel.app/demo",
   "repository": "https://github.com/pileofflapjacks1/NeuraShell",
   "license": "MIT",
   "banned_claims": true

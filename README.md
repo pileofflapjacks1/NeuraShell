@@ -11,6 +11,12 @@ User
   ↓ Intent → OS / apps (Binder, etc.)
 ```
 
+## Live
+
+- **Demo tour:** https://neurashell-eta.vercel.app/demo  
+- **Shell:** https://neurashell-eta.vercel.app/  
+- **Beach listing:** https://neurabeach.com/projects/neurashell (after Beach deploy)
+
 ## Quick start
 
 ```bash
