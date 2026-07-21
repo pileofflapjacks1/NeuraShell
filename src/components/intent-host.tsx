@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { createKeyboardAdapter, createSyntheticAdapter } from "@/lib/intents";
 import { createBridgeRemoteAdapter } from "@/lib/bridge/client";
+import { createReplayAdapter } from "@/lib/intents/recording";
+import type { IntentRecording } from "@/lib/intents/recording";
 import { useShellStore } from "@/lib/store";
 import type { IntentAdapter } from "@/lib/intents/types";
 
@@ -25,20 +27,30 @@ export function IntentHost({
   const hold = useShellStore((s) => s.hold);
   const frozen = useShellStore((s) => s.frozen);
   const pendingMode = useShellStore((s) => s.pendingMode);
+  const setReplaying = useShellStore((s) => s.setReplaying);
 
   const synthRef = useRef<IntentAdapter | null>(null);
   const keyboardRef = useRef<IntentAdapter | null>(null);
   const bridgeRef = useRef<IntentAdapter | null>(null);
+  const replayRef = useRef<ReturnType<typeof createReplayAdapter> | null>(null);
+
+  const stopReplay = useCallback(() => {
+    replayRef.current?.stop();
+    replayRef.current = null;
+    setReplaying(false);
+  }, [setReplaying]);
 
   const stopAll = useCallback(() => {
+    stopReplay();
     synthRef.current?.stop();
     synthRef.current = null;
     bridgeRef.current?.stop();
     bridgeRef.current = null;
     setConnection("disconnected");
-  }, [setConnection]);
+  }, [setConnection, stopReplay]);
 
   const startSynthetic = useCallback(() => {
+    stopReplay();
     bridgeRef.current?.stop();
     bridgeRef.current = null;
     synthRef.current?.stop();
@@ -46,9 +58,10 @@ export function IntentHost({
     synthRef.current = adapter;
     adapter.start(applyIntent);
     setConnection("synthetic");
-  }, [applyIntent, setConnection]);
+  }, [applyIntent, setConnection, stopReplay]);
 
   const startBridgeRemote = useCallback(() => {
+    stopReplay();
     synthRef.current?.stop();
     synthRef.current = null;
     bridgeRef.current?.stop();
@@ -56,7 +69,31 @@ export function IntentHost({
     bridgeRef.current = adapter;
     adapter.start(applyIntent);
     setConnection("bridge-remote");
-  }, [applyIntent, setConnection]);
+  }, [applyIntent, setConnection, stopReplay]);
+
+  const startReplay = useCallback(
+    (rec: IntentRecording) => {
+      if (!rec.events.length) return;
+      // Pause live synthetic/bridge so replay is clean
+      synthRef.current?.stop();
+      synthRef.current = null;
+      bridgeRef.current?.stop();
+      bridgeRef.current = null;
+      replayRef.current?.stop();
+
+      const adapter = createReplayAdapter(rec.events);
+      replayRef.current = adapter;
+      setReplaying(true);
+      setConnection("synthetic");
+      useShellStore.getState().setStatus(`Replaying “${rec.name}” (${rec.events.length} events)…`);
+      adapter.start(applyIntent, () => {
+        replayRef.current = null;
+        setReplaying(false);
+        useShellStore.getState().setStatus("Replay complete.");
+      });
+    },
+    [applyIntent, setConnection, setReplaying]
+  );
 
   useEffect(() => {
     hydrate();
@@ -81,6 +118,7 @@ export function IntentHost({
 
       if (e.key === "Escape") {
         e.preventDefault();
+        stopReplay();
         panicStop();
         return;
       }
@@ -94,7 +132,6 @@ export function IntentHost({
       }
 
       if (e.key === " " || e.code === "Space") {
-        // Confirm pending mode or release hold
         if (pendingMode || hold || frozen) {
           e.preventDefault();
           if (hold || frozen) releaseHold();
@@ -112,6 +149,7 @@ export function IntentHost({
     hold,
     frozen,
     pendingMode,
+    stopReplay,
   ]);
 
   useEffect(() => {
@@ -119,14 +157,35 @@ export function IntentHost({
       startSynthetic,
       stopSession: stopAll,
       startBridgeRemote,
+      startReplay,
+      stopReplay,
     });
-  }, [onAdaptersReady, startSynthetic, stopAll, startBridgeRemote]);
+  }, [
+    onAdaptersReady,
+    startSynthetic,
+    stopAll,
+    startBridgeRemote,
+    startReplay,
+    stopReplay,
+  ]);
 
   useEffect(() => {
     return () => {
       synthRef.current?.stop();
       bridgeRef.current?.stop();
+      replayRef.current?.stop();
     };
+  }, []);
+
+  // If store panicStop cleared replaying, ensure timers stop
+  useEffect(() => {
+    const unsub = useShellStore.subscribe((state, prev) => {
+      if (prev.replaying && !state.replaying && replayRef.current) {
+        replayRef.current.stop();
+        replayRef.current = null;
+      }
+    });
+    return unsub;
   }, []);
 
   return null;
@@ -136,4 +195,6 @@ export interface IntentSessionApi {
   startSynthetic: () => void;
   stopSession: () => void;
   startBridgeRemote: () => void;
+  startReplay: (rec: IntentRecording) => void;
+  stopReplay: () => void;
 }

@@ -66,6 +66,19 @@ export default function A11yPage() {
         "alertdialog with large RELEASE, elapsed timer, reason copy; Space releases. Try HOLD below.",
     },
     {
+      id: "readiness-arm",
+      label: "Readiness score + ARM gate",
+      pass: true,
+      detail:
+        "Session Ready shows 0–100 score and required factors; intent actuation needs ARM; STOP disarms.",
+    },
+    {
+      id: "record-replay",
+      label: "Local record / replay",
+      pass: true,
+      detail: "Capture intents to JSON, replay timeline, no cloud upload.",
+    },
+    {
       id: "calibration",
       label: "Calibration wizard path",
       pass: true,

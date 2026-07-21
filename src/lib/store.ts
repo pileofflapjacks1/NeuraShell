@@ -8,6 +8,11 @@ import {
   sanitizeProfile,
 } from "@/lib/profiles/schema";
 import { loadProfile, saveProfile } from "@/lib/profiles/storage";
+import {
+  buildRecording,
+  MAX_RECORDED_EVENTS,
+  type IntentRecording,
+} from "@/lib/intents/recording";
 
 export type UndoAction =
   | { kind: "mode"; from: ShellMode; to: ShellMode }
@@ -27,25 +32,30 @@ export interface ShellState {
   freezeReason: FreezeReason;
   frozenAt: number | null;
   confidence: number;
+  confidenceSamples: Array<{ t: number; c: number }>;
   lastIntentAt: number | null;
   profile: ShellProfile;
-  // Point mode soft cursor (normalized 0–1 canvas coords)
   cursor: { x: number; y: number };
-  // Click / highlight target
   clickTargetId: string | null;
-  // Type buffer
   typed: string;
-  // Switch scan
   switchIndex: number;
-  // Pending mode change when Safe mode requires confirm
   pendingMode: ShellMode | null;
-  // Status line for demo / UX
   statusMessage: string;
   undoStack: UndoAction[];
-  // Hydration
   hydrated: boolean;
-  // Calibration wizard open (shell home can deep-link)
   calibrating: boolean;
+
+  /** Actuation gate — intents only drive modes/cursor when armed (or replaying/calibrating). */
+  armed: boolean;
+
+  /** Local intent capture */
+  recording: boolean;
+  recordingStartedAt: number | null;
+  recordedEvents: IntentEvent[];
+  lastRecording: IntentRecording | null;
+
+  /** Replay runtime flag (scheduler lives in IntentHost) */
+  replaying: boolean;
 
   // Actions
   hydrate: () => void;
@@ -70,9 +80,19 @@ export interface ShellState {
   setSwitchIndex: (i: number) => void;
   setCalibrating: (on: boolean) => void;
   completeCalibration: (partial: Partial<ShellProfile>) => void;
+
+  arm: () => boolean;
+  disarm: () => void;
+
+  startRecording: () => void;
+  stopRecording: () => IntentRecording | null;
+  clearRecording: () => void;
+  loadRecording: (rec: IntentRecording) => void;
+  setReplaying: (on: boolean) => void;
 }
 
 const MAX_UNDO = 40;
+const MAX_SAMPLES = 48;
 
 export const useShellStore = create<ShellState>((set, get) => ({
   connection: "disconnected",
@@ -83,6 +103,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
   freezeReason: null,
   frozenAt: null,
   confidence: 0,
+  confidenceSamples: [],
   lastIntentAt: null,
   profile: { ...DEFAULT_PROFILE },
   cursor: { x: 0.5, y: 0.5 },
@@ -94,6 +115,12 @@ export const useShellStore = create<ShellState>((set, get) => ({
   undoStack: [],
   hydrated: false,
   calibrating: false,
+  armed: false,
+  recording: false,
+  recordingStartedAt: null,
+  recordedEvents: [],
+  lastRecording: null,
+  replaying: false,
 
   hydrate: () => {
     if (get().hydrated) return;
@@ -104,23 +131,28 @@ export const useShellStore = create<ShellState>((set, get) => ({
       mode: profile.defaultMode,
       hydrated: true,
       statusMessage: profile.calibratedAt
-        ? "Ready. Start synthetic session or use keyboard sim."
-        : "Ready. Run Calibration for dwell / threshold defaults (recommended).",
+        ? "Ready. Connect a session, then ARM when the readiness score allows."
+        : "Ready. Calibrate, connect a session, then ARM for actuation.",
     });
   },
 
-  setConnection: (connection) =>
+  setConnection: (connection) => {
+    const was = get().connection;
     set({
       connection,
       statusMessage:
         connection === "disconnected"
           ? "Disconnected."
           : connection === "synthetic"
-            ? "Synthetic session active."
+            ? "Synthetic session active — check readiness, then ARM."
             : connection === "bridge-sim"
               ? "Bridge simulator connected."
               : "Bridge remote (local WS / channel).",
-    }),
+    });
+    if (connection === "disconnected" && was !== "disconnected") {
+      set({ armed: false });
+    }
+  },
 
   setConfidence: (confidence) => set({ confidence: clamp01(confidence) }),
 
@@ -181,6 +213,15 @@ export const useShellStore = create<ShellState>((set, get) => ({
     if (from !== "idle") {
       pushUndo(set, get, { kind: "mode", from, to: "idle" });
     }
+    // Capture recording if mid-capture
+    let lastRecording = get().lastRecording;
+    if (get().recording && get().recordingStartedAt) {
+      lastRecording = buildRecording(
+        get().recordedEvents,
+        get().recordingStartedAt!,
+        "stop-capture"
+      );
+    }
     set({
       mode: "idle",
       pendingMode: null,
@@ -188,7 +229,12 @@ export const useShellStore = create<ShellState>((set, get) => ({
       hold: false,
       freezeReason: "stop",
       frozenAt: Date.now(),
-      statusMessage: "STOP — actuation frozen, mode → idle. Release to resume control.",
+      armed: false,
+      recording: false,
+      recordingStartedAt: null,
+      replaying: false,
+      lastRecording,
+      statusMessage: "STOP — disarmed, frozen, mode → idle. RELEASE then re-ARM to actuate.",
     });
   },
 
@@ -210,8 +256,8 @@ export const useShellStore = create<ShellState>((set, get) => ({
       frozenAt: null,
       statusMessage:
         reason === "stop"
-          ? "STOP released — actuation available (mode still idle until you switch)."
-          : "Hold released — actuation available.",
+          ? "STOP released — still disarmed until you ARM (mode idle)."
+          : "Hold released — actuation depends on ARM state.",
     });
   },
 
@@ -249,35 +295,54 @@ export const useShellStore = create<ShellState>((set, get) => ({
 
   applyIntent: (event) => {
     const state = get();
+
+    // Always capture while recording (including frozen — useful for demos)
+    if (state.recording) {
+      const recordedEvents = [...state.recordedEvents, event].slice(-MAX_RECORDED_EVENTS);
+      set({ recordedEvents });
+    }
+
+    const pushSample = (c: number, t: number) => {
+      const confidenceSamples = [...get().confidenceSamples, { t, c: clamp01(c) }].slice(
+        -MAX_SAMPLES
+      );
+      set({ confidence: clamp01(c), confidenceSamples, lastIntentAt: t });
+    };
+
     if (state.hold || state.frozen) {
-      // Monitoring only while frozen — no actuation
       if (event.type === "class_label") {
-        set({ confidence: event.confidence, lastIntentAt: event.t });
+        pushSample(event.confidence, event.t);
       } else if (event.type === "velocity_2d") {
         const speed = Math.hypot(event.vx, event.vy);
-        set({ confidence: clamp01(0.3 + speed * 0.5), lastIntentAt: event.t });
+        pushSample(0.3 + speed * 0.5, event.t);
       } else {
         set({ lastIntentAt: event.t });
       }
       return;
     }
-    if (state.connection === "disconnected" && event.type !== "synthetic") {
-      // Allow keyboard velocity only when connected? Keep keyboard for confidence during cal.
-      // Still accept intents for calibration confidence sampling if calibrating.
-      if (!state.calibrating) return;
-    }
 
-    set({ lastIntentAt: event.t });
+    const openChannel =
+      state.connection !== "disconnected" ||
+      state.calibrating ||
+      state.replaying;
+
+    if (!openChannel && event.type !== "synthetic") {
+      return;
+    }
 
     if (event.type === "synthetic" && event.name === "stop") {
       get().panicStop();
       return;
     }
 
+    set({ lastIntentAt: event.t });
+
+    const mayActuate = state.armed || state.replaying || state.calibrating;
+
     if (event.type === "velocity_2d") {
       const speed = Math.hypot(event.vx, event.vy);
-      set({ confidence: clamp01(0.3 + speed * 0.5) });
-      if (state.mode === "point" || state.mode === "click") {
+      pushSample(0.3 + speed * 0.5, event.t);
+      if (mayActuate && (state.mode === "point" || state.mode === "click")) {
         const scale = state.safeMode ? 0.012 : 0.02;
         set((s) => ({
           cursor: {
@@ -290,7 +355,9 @@ export const useShellStore = create<ShellState>((set, get) => ({
     }
 
     if (event.type === "class_label") {
-      set({ confidence: clamp01(event.confidence) });
+      pushSample(event.confidence, event.t);
+      if (!mayActuate) return;
+
       const threshold = state.profile.confidenceThreshold * (state.safeMode ? 1.05 : 1);
       if (event.confidence < threshold) return;
 
@@ -304,15 +371,14 @@ export const useShellStore = create<ShellState>((set, get) => ({
         get().setClickTarget(id);
         return;
       }
-
-      if (state.mode === "type" && event.label === "confirm") {
-        return;
-      }
       return;
     }
 
     if (event.type === "switch_binary" && event.active) {
-      set({ confidence: 0.8, switchIndex: event.index });
+      pushSample(0.8, event.t);
+      if (mayActuate) {
+        set({ switchIndex: event.index });
+      }
     }
   },
 
@@ -378,6 +444,84 @@ export const useShellStore = create<ShellState>((set, get) => ({
       safeMode: profile.safeMode,
       calibrating: false,
       statusMessage: `Calibration saved to “${profile.name}”.`,
+    });
+  },
+
+  arm: () => {
+    const s = get();
+    if (s.hold || s.frozen) {
+      set({ statusMessage: "Cannot ARM while frozen — RELEASE first." });
+      return false;
+    }
+    if (s.connection === "disconnected" && !s.replaying) {
+      set({ statusMessage: "Cannot ARM without a session — start synthetic first." });
+      return false;
+    }
+    set({
+      armed: true,
+      statusMessage: "ARMED — intent streams may actuate. STOP always disarms.",
+    });
+    return true;
+  },
+
+  disarm: () => {
+    set({
+      armed: false,
+      statusMessage: "Disarmed — monitoring only (no intent actuation).",
+    });
+  },
+
+  startRecording: () => {
+    set({
+      recording: true,
+      recordingStartedAt: Date.now(),
+      recordedEvents: [],
+      statusMessage: "Recording intents… STOP ends capture; use Export when done.",
+    });
+  },
+
+  stopRecording: () => {
+    const { recording, recordedEvents, recordingStartedAt } = get();
+    if (!recording || !recordingStartedAt) {
+      set({ recording: false, recordingStartedAt: null });
+      return get().lastRecording;
+    }
+    const rec = buildRecording(recordedEvents, recordingStartedAt, "neurashell-capture");
+    set({
+      recording: false,
+      recordingStartedAt: null,
+      lastRecording: rec,
+      statusMessage: `Recording stopped — ${rec.events.length} events. Export or replay.`,
+    });
+    return rec;
+  },
+
+  clearRecording: () => {
+    set({
+      recordedEvents: [],
+      lastRecording: null,
+      recording: false,
+      recordingStartedAt: null,
+      statusMessage: "Recording buffer cleared.",
+    });
+  },
+
+  loadRecording: (rec) => {
+    set({
+      lastRecording: rec,
+      recordedEvents: rec.events.map((e) => ({ ...e })),
+      recording: false,
+      recordingStartedAt: null,
+      statusMessage: `Loaded recording “${rec.name}” (${rec.events.length} events).`,
+    });
+  },
+
+  setReplaying: (replaying) => {
+    set({
+      replaying,
+      statusMessage: replaying
+        ? "Replaying recording — actuation allowed for playback."
+        : "Replay finished.",
     });
   },
 }));

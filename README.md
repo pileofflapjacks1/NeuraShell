@@ -36,18 +36,20 @@ pnpm test
 
 No accounts. No env secrets for v0.1 demo.
 
-## What ships in v0.2
+## What ships in v0.3
 
 | Area | Behavior |
 |------|----------|
-| **Session Ready** | disconnected / synthetic / bridge-sim / bridge-remote labels; one-click synthetic; confidence meter; Safe mode |
+| **Session Ready** | connection labels + **readiness score (0–100)** + factor checklist |
+| **ARM gate** | intent actuation only when ARMED (or during replay/calibration); STOP disarms |
 | **Modes** | exactly one of `point` · `click` · `type` · `switch` · `idle` (Safe mode requires confirm) |
 | **Panic bar** | STOP · UNDO · HOLD — sticky, large targets; Esc / ⌘Z / Space |
-| **Freeze UI** | Full overlay for STOP/HOLD with reason, elapsed timer, large RELEASE (panic bar stays on top) |
-| **Calibration** | `/calibrate` wizard: Safe mode, confidence, dwell, switch timing, optional dwell practice → local profile |
-| **Profiles** | localStorage + export/import JSON (NeuralBridge-friendly fields; `calibratedAt`) |
-| **Intents** | synthetic walk, keyboard sim, optional Bridge WS `ws://127.0.0.1:7711` / BroadcastChannel |
-| **Demo** | `/demo` ~60s scripted tour, keyboard-complete |
+| **Freeze UI** | Full overlay for STOP/HOLD with reason, elapsed timer, large RELEASE |
+| **Calibration** | `/calibrate` wizard → local profile (`calibratedAt`) |
+| **Record / Replay** | local intent capture, export/import JSON, timeline replay |
+| **Profiles** | localStorage + export/import JSON (NeuralBridge-friendly fields) |
+| **Intents** | synthetic, keyboard, optional Bridge WS / BroadcastChannel |
+| **Demo** | `/demo` scripted tour including ARM + record |
 
 ## Keyboard (sim)
 

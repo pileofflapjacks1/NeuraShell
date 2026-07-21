@@ -2,38 +2,50 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useShellStore } from "./store";
 import { DEFAULT_PROFILE } from "./profiles/schema";
 
+function resetStore() {
+  useShellStore.setState({
+    connection: "synthetic",
+    mode: "point",
+    safeMode: true,
+    hold: false,
+    frozen: false,
+    freezeReason: null,
+    frozenAt: null,
+    confidence: 0.5,
+    confidenceSamples: [],
+    lastIntentAt: null,
+    profile: { ...DEFAULT_PROFILE, calibratedAt: "2026-07-21T00:00:00.000Z" },
+    cursor: { x: 0.5, y: 0.5 },
+    clickTargetId: null,
+    typed: "",
+    switchIndex: 0,
+    pendingMode: null,
+    statusMessage: "test",
+    undoStack: [],
+    hydrated: true,
+    calibrating: false,
+    armed: false,
+    recording: false,
+    recordingStartedAt: null,
+    recordedEvents: [],
+    lastRecording: null,
+    replaying: false,
+  });
+}
+
 describe("shell store panic + modes", () => {
   beforeEach(() => {
-    useShellStore.setState({
-      connection: "synthetic",
-      mode: "point",
-      safeMode: true,
-      hold: false,
-      frozen: false,
-      freezeReason: null,
-      frozenAt: null,
-      confidence: 0.5,
-      lastIntentAt: null,
-      profile: { ...DEFAULT_PROFILE },
-      cursor: { x: 0.5, y: 0.5 },
-      clickTargetId: null,
-      typed: "",
-      switchIndex: 0,
-      pendingMode: null,
-      statusMessage: "test",
-      undoStack: [],
-      hydrated: true,
-      calibrating: false,
-    });
+    resetStore();
   });
 
-  it("STOP freezes and sets idle with freezeReason stop", () => {
+  it("STOP freezes, disarms, and sets idle", () => {
+    useShellStore.getState().arm();
     useShellStore.getState().panicStop();
     const s = useShellStore.getState();
     expect(s.mode).toBe("idle");
     expect(s.frozen).toBe(true);
     expect(s.freezeReason).toBe("stop");
-    expect(s.frozenAt).toBeTypeOf("number");
+    expect(s.armed).toBe(false);
     expect(s.pendingMode).toBeNull();
   });
 
@@ -77,7 +89,20 @@ describe("shell store panic + modes", () => {
     expect(useShellStore.getState().pendingMode).toBeNull();
   });
 
-  it("velocity updates cursor in point mode", () => {
+  it("velocity does not move cursor when disarmed", () => {
+    const x0 = useShellStore.getState().cursor.x;
+    useShellStore.getState().applyIntent({
+      type: "velocity_2d",
+      vx: 1,
+      vy: 0,
+      t: Date.now(),
+    });
+    expect(useShellStore.getState().cursor.x).toBe(x0);
+    expect(useShellStore.getState().confidence).toBeGreaterThan(0);
+  });
+
+  it("velocity updates cursor when armed", () => {
+    useShellStore.getState().arm();
     useShellStore.getState().applyIntent({
       type: "velocity_2d",
       vx: 1,
@@ -106,5 +131,37 @@ describe("shell store panic + modes", () => {
     expect(p.confidenceThreshold).toBe(0.7);
     expect(p.calibratedAt).toBeTruthy();
     expect(p.version).toBe("0.2.0");
+  });
+
+  it("records intents and builds lastRecording on stop", () => {
+    useShellStore.getState().startRecording();
+    useShellStore.getState().applyIntent({
+      type: "velocity_2d",
+      vx: 0.2,
+      vy: 0,
+      t: Date.now(),
+    });
+    useShellStore.getState().applyIntent({
+      type: "class_label",
+      label: "confirm",
+      confidence: 0.9,
+      t: Date.now() + 10,
+    });
+    const rec = useShellStore.getState().stopRecording();
+    expect(rec).toBeTruthy();
+    expect(rec!.events.length).toBe(2);
+    expect(useShellStore.getState().recording).toBe(false);
+    expect(useShellStore.getState().lastRecording?.events.length).toBe(2);
+  });
+
+  it("cannot arm when disconnected", () => {
+    useShellStore.setState({ connection: "disconnected" });
+    expect(useShellStore.getState().arm()).toBe(false);
+    expect(useShellStore.getState().armed).toBe(false);
+  });
+
+  it("cannot arm when frozen", () => {
+    useShellStore.getState().panicStop();
+    expect(useShellStore.getState().arm()).toBe(false);
   });
 });

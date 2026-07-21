@@ -12,6 +12,7 @@ import { ProfilePanel } from "@/components/profile-panel";
 import { PointCanvas } from "@/components/point-canvas";
 import { SwitchScan } from "@/components/switch-scan";
 import { TypeBoard } from "@/components/type-board";
+import { RecordReplay } from "@/components/record-replay";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
 import { ShellNav } from "@/components/shell-nav";
 import { useShellStore } from "@/lib/store";
@@ -20,6 +21,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
   const apiRef = useRef<IntentSessionApi | null>(null);
   const [, bump] = useState(0);
   const calibratedAt = useShellStore((s) => s.profile.calibratedAt);
+  const armed = useShellStore((s) => s.armed);
 
   const onAdaptersReady = useCallback((api: IntentSessionApi) => {
     apiRef.current = api;
@@ -41,16 +43,27 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
               Control plane
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-shell-muted sm:text-base">
-              Daily-driver shell for high-bandwidth intent: session ready, modes, panic stop/undo,
-              local profiles. Simulator-first.
+              Session readiness + ARM gate · panic freeze · calibration · local intent
+              record/replay. Simulator-first.
             </p>
           </div>
-          <Link
-            href="/calibrate"
-            className="shell-btn shell-btn-primary min-h-12 px-4 no-underline text-sm"
-          >
-            {calibratedAt ? "Recalibrate" : "Calibrate"}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <span
+              className={
+                armed
+                  ? "inline-flex min-h-12 items-center rounded-xl border border-emerald-400/50 bg-emerald-500/15 px-3 text-sm font-bold text-emerald-100"
+                  : "inline-flex min-h-12 items-center rounded-xl border border-shell-border bg-shell-panel px-3 text-sm font-bold text-shell-muted"
+              }
+            >
+              {armed ? "ARMED" : "DISARMED"}
+            </span>
+            <Link
+              href="/calibrate"
+              className="shell-btn shell-btn-primary min-h-12 px-4 no-underline text-sm"
+            >
+              {calibratedAt ? "Recalibrate" : "Calibrate"}
+            </Link>
+          </div>
         </div>
 
         {!calibratedAt && (
@@ -78,6 +91,10 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
               <SwitchScan />
               <TypeBoard />
             </div>
+            <RecordReplay
+              onStartReplay={(rec) => apiRef.current?.startReplay(rec)}
+              onStopReplay={() => apiRef.current?.stopReplay()}
+            />
           </div>
           <div className="space-y-4">
             <ConfidenceMeter />
@@ -88,7 +105,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
       </main>
 
       <footer className="border-t border-shell-border py-4 text-center text-xs text-shell-muted">
-        NeuraShell v0.2 · suite_role: app · computer_side · MIT ·{" "}
+        NeuraShell v0.3 · suite_role: app · computer_side · MIT ·{" "}
         <a href="https://neurabeach.com" className="text-cyan-400 underline-offset-2 hover:underline">
           NeuraBeach
         </a>
@@ -116,6 +133,7 @@ function KeyboardCheatsheet() {
         <li>
           <kbd className="kbd">1</kbd>–<kbd className="kbd">4</kbd> switch indices
         </li>
+        <li className="text-shell-muted">Actuation requires ARM when readiness allows</li>
       </ul>
     </div>
   );

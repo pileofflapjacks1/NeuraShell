@@ -29,29 +29,47 @@ const STEPS: Step[] = [
     id: "connect",
     title: "Connect synthetic",
     detail: "Start a zero-hardware synthetic intent session.",
-    durationMs: 6000,
+    durationMs: 5000,
     run: (api) => api.startSynthetic(),
   },
   {
-    id: "safe",
-    title: "Safe mode ON",
-    detail: "Large targets + mode change confirm.",
+    id: "safe-arm",
+    title: "Safe + ARM",
+    detail: "Safe mode ON, then ARM when readiness allows.",
+    durationMs: 6000,
+    run: () => {
+      const s = useShellStore.getState();
+      s.setSafeMode(true);
+      s.releaseHold();
+      // synthetic will raise readiness; force-arm after session is up
+      const ok = s.arm();
+      s.setStatus(
+        ok
+          ? "Demo: ARMED — actuation enabled."
+          : "Demo: arm attempted (need session + not frozen)."
+      );
+      // Retry arm shortly once intents flow
+      setTimeout(() => useShellStore.getState().arm(), 400);
+    },
+  },
+  {
+    id: "record",
+    title: "Record intents",
+    detail: "Local capture of the synthetic stream.",
     durationMs: 5000,
     run: () => {
-      useShellStore.getState().setSafeMode(true);
-      useShellStore.getState().setStatus("Demo: Safe mode enabled.");
+      useShellStore.getState().startRecording();
     },
   },
   {
     id: "mode-point",
     title: "Mode → point",
     detail: "Request point mode (confirm if Safe).",
-    durationMs: 7000,
+    durationMs: 6000,
     run: () => {
       const s = useShellStore.getState();
       s.requestMode("point");
       if (s.safeMode) {
-        // auto-confirm after short delay so tour progresses
         setTimeout(() => useShellStore.getState().confirmPendingMode(), 800);
       }
     },
@@ -60,7 +78,7 @@ const STEPS: Step[] = [
     id: "mode-switch",
     title: "Mode → switch",
     detail: "Switch scan highlight for 2–4 options.",
-    durationMs: 8000,
+    durationMs: 5000,
     run: () => {
       const s = useShellStore.getState();
       s.requestMode("switch");
@@ -68,24 +86,12 @@ const STEPS: Step[] = [
     },
   },
   {
-    id: "mode-type",
-    title: "Mode → type",
-    detail: "Minimal on-screen board path.",
-    durationMs: 7000,
-    run: () => {
-      useShellStore.getState().requestMode("type");
-      setTimeout(() => {
-        useShellStore.getState().confirmPendingMode();
-        useShellStore.getState().appendTyped("hi");
-      }, 800);
-    },
-  },
-  {
-    id: "stop",
-    title: "Panic STOP",
-    detail: "Cancel pending, freeze, mode → idle.",
+    id: "stop-record",
+    title: "Stop record + STOP",
+    detail: "End capture, panic STOP (disarms + freezes).",
     durationMs: 6000,
     run: () => {
+      useShellStore.getState().stopRecording();
       useShellStore.getState().panicStop();
     },
   },
@@ -93,7 +99,7 @@ const STEPS: Step[] = [
     id: "export",
     title: "Export profile",
     detail: "Download local JSON profile (NeuralBridge-friendly fields).",
-    durationMs: 6000,
+    durationMs: 5000,
     run: () => {
       const profile = useShellStore.getState().profile;
       downloadProfile(profile, "neurashell-demo-profile.json");
@@ -181,11 +187,11 @@ export default function DemoPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Demo tour (~60s)
+              Demo tour (~40s)
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-shell-muted">
-              No account. Scripted path: synthetic → safe mode → modes → STOP → export profile.
-              Keyboard works the whole time (Esc STOP, ⌘Z UNDO).
+              No account. Scripted path: synthetic → ARM → record → modes → STOP → export
+              profile. Keyboard works the whole time (Esc STOP, ⌘Z UNDO).
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

@@ -7,7 +7,7 @@ You are working on **NeuraShell only** unless the user asks to edit another suit
 Computer-side **control plane** for high-bandwidth intent users (modes, panic, profiles, session ready).  
 Not implant software. Not medical. Not Neuralink-affiliated. Not Binder (TCG). Not NFA (flow). Not Beach (catalog).
 
-## v0.2 boundaries
+## v0.3 boundaries
 
 - Simulator-first: synthetic + keyboard always work.
 - Optional Bridge: soft WS / BroadcastChannel only; degrade if missing.
@@ -15,6 +15,8 @@ Not implant software. Not medical. Not Neuralink-affiliated. Not Binder (TCG). N
 - Outputs: `ui_only` (in-shell preview). No full OS hijack required.
 - Freeze UI: STOP/HOLD → freezeReason + FreezeOverlay; panic bar remains above.
 - Calibration: `/calibrate` writes profile (+ `calibratedAt`); no cloud.
+- Readiness: `lib/readiness.ts` score; ARM required for actuation (except replay/cal).
+- Record/replay: local JSON only (`lib/intents/recording.ts`); STOP cancels replay.
 - Do not add implant SDKs, medical features, accounts, or monorepo merges.
 
 ## Layout
