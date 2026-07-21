@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#070a0f"/>
+  <text x="60" y="80" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="32" font-weight="700">/demo · ~60s tour</text>
+  <text x="60" y="115" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="16">synthetic → safe → modes → STOP → export profile</text>
+  <rect x="60" y="160" width="1080" height="16" rx="8" fill="#0f141c"/>
+  <rect x="60" y="160" width="720" height="16" rx="8" fill="#06b6d4"/>
+  <g font-family="system-ui,sans-serif" font-size="14">
+    <rect x="60" y="210" width="240" height="80" rx="12" fill="#052e16" stroke="#166534"/>
+    <text x="80" y="255" fill="#bbf7d0">1. Connect synthetic</text>
+    <rect x="320" y="210" width="240" height="80" rx="12" fill="#083344" stroke="#22d3ee"/>
+    <text x="340" y="255" fill="#a5f3fc">2. Safe mode ON</text>
+    <rect x="580" y="210" width="240" height="80" rx="12" fill="#0f141c" stroke="#243041"/>
+    <text x="600" y="255" fill="#e8eef7">3–5. Modes</text>
+    <rect x="840" y="210" width="300" height="80" rx="12" fill="#0f141c" stroke="#243041"/>
+    <text x="860" y="255" fill="#e8eef7">6–7. STOP + export</text>
+  </g>
+  <text x="60" y="360" fill="#f87171" font-family="system-ui,sans-serif" font-size="20" font-weight="700">Panic: Esc = STOP · ⌘Z = UNDO · Space = confirm</text>
+  <text x="60" y="420" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="16">No accounts · no secrets · keyboard-complete path</text>
+</svg>

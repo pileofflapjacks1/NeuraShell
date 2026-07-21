@@ -1,0 +1,37 @@
+{
+  "manifest_version": "1.0.0",
+  "name": "neurashell",
+  "display_name": "NeuraShell",
+  "version": "0.1.0",
+  "description": "Daily-driver computer-side control plane for high-bandwidth intent users: mode switch, panic stop/undo, confidence, local profiles, session ready. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.",
+  "safety_class": "computer_side",
+  "runtime": "web",
+  "category": "accessibility",
+  "featured": true,
+  "collection": "col-neura-suite",
+  "suite_role": "app",
+  "depends_on": [],
+  "inputs": [
+    "velocity_2d",
+    "class_label",
+    "switch_binary",
+    "synthetic"
+  ],
+  "outputs": ["ui_only"],
+  "hardware": [
+    "synthetic",
+    "generic_intent",
+    "websocket_intent"
+  ],
+  "adapter_maturity": "open_stack",
+  "permissions": ["none"],
+  "dof": "switch_2_4",
+  "latency_class": "interactive",
+  "platforms": ["web", "macos", "windows", "linux"],
+  "calibration": "optional",
+  "entrypoint": "https://neurashell.vercel.app/demo",
+  "demo_video_url": "https://neurashell.vercel.app/demo",
+  "repository": "https://github.com/pileofflapjacks1/NeuraShell",
+  "license": "MIT",
+  "banned_claims": true
+}

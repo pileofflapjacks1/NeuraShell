@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#070a0f"/>
+  <rect x="0" y="0" width="1200" height="36" fill="#451a03"/>
+  <text x="600" y="24" fill="#fde68a" font-family="system-ui,sans-serif" font-size="14" text-anchor="middle">Computer-side only · Not medical · Not Neuralink-affiliated</text>
+  <rect x="24" y="52" width="1152" height="56" rx="10" fill="#0f141c" stroke="#7f1d1d"/>
+  <rect x="40" y="64" width="140" height="32" rx="8" fill="#dc2626"/>
+  <text x="110" y="86" fill="#fff" font-family="system-ui,sans-serif" font-size="16" font-weight="700" text-anchor="middle">STOP</text>
+  <rect x="196" y="64" width="140" height="32" rx="8" fill="#17202b" stroke="#243041"/>
+  <text x="266" y="86" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="16" font-weight="700" text-anchor="middle">UNDO</text>
+  <rect x="352" y="64" width="140" height="32" rx="8" fill="#17202b" stroke="#243041"/>
+  <text x="422" y="86" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="16" font-weight="700" text-anchor="middle">HOLD</text>
+  <text x="60" y="160" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="36" font-weight="700">NeuraShell</text>
+  <text x="60" y="200" fill="#8b9bb0" font-family="system-ui,sans-serif" font-size="18">Session Ready · Synthetic connected · Safe mode ON</text>
+  <rect x="60" y="240" width="1080" height="180" rx="16" fill="#0f141c" stroke="#243041"/>
+  <circle cx="100" cy="300" r="8" fill="#34d399"/>
+  <text x="120" y="306" fill="#e8eef7" font-family="system-ui,sans-serif" font-size="18">Synthetic session active</text>
+  <rect x="120" y="340" width="220" height="44" rx="10" fill="#0e7490"/>
+  <text x="230" y="368" fill="#ecfeff" font-family="system-ui,sans-serif" font-size="16" font-weight="600" text-anchor="middle">Start synthetic session</text>
+  <text x="60" y="500" fill="#67e8f9" font-family="system-ui,sans-serif" font-size="14">v0.1 control plane · ui_only · computer_side</text>
+</svg>
