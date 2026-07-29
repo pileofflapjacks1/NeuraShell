@@ -11,7 +11,7 @@
 | **Featured** | yes |
 | **Collection** | `col-neura-suite` |
 | **Suite role** | `app` (control shell) |
-| **Depends on** | `[]` (optional soft NeuralBridge later) |
+| **Depends on** | `[]` (optional soft Neurabridge later) |
 | **License** | MIT |
 | **GitHub** | https://github.com/pileofflapjacks1/NeuraShell |
 | **Live demo** | https://neurashell-eta.vercel.app/demo |
@@ -75,7 +75,7 @@ Computer-side web app only. Not implant software. Not a medical device (not SaMD
 |-------|------|
 | **NeuraBeach** | Catalog — https://neurabeach.com · `col-neura-suite` |
 | **NeuraBinder** | End-user TCG + BCI Mode demo |
-| **NeuralBridge** | Intent middleware |
+| **Neurabridge** | Intent middleware |
 | **Intent → OS** | OS cursor/keys from velocity |
 | **Neural Flow Architect** | Flow co-pilot research |
 | **NeuraShell (this)** | Daily-driver control plane / starter shell |

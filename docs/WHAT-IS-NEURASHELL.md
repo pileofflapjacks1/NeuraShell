@@ -25,7 +25,7 @@ One-page suite copy for Beach, demos, and collaborators.
 ```
 User
   ↓ NeuraShell   ← modes, panic, readiness, ARM, profiles
-  ↓ NeuralBridge (optional middleware)
+  ↓ Neurabridge (optional middleware)
   ↓ Intent → OS / apps (Binder, etc.)
 ```
 
@@ -41,7 +41,7 @@ North star: *Beach finds tools · Binder is the live demo · Bridge is how apps 
 | **Not a medical device** | Not SaMD; no diagnose / treat / cure / prevent claims |
 | **Not affiliated with Neuralink** | Or any implant vendor |
 | **Not NeuraBinder** | Binder = TCG + BCI Mode demo app |
-| **Not NeuralBridge** | Bridge = intent middleware library / service |
+| **Not Neurabridge** | Bridge = intent middleware library / service |
 | **Not Neural Flow Architect** | NFA = flow co-pilot research |
 | **Not NeuraBeach** | Beach = catalog / storefront |
 | **Not full OS takeover by default** | In-shell preview; Actuate OS is **dry-run** unless you opt into local live POST + a local helper |

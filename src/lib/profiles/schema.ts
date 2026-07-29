@@ -1,7 +1,7 @@
 import type { ShellMode } from "@/lib/intents/types";
 
 /**
- * Local profile shape — NeuralBridge-friendly field names documented below.
+ * Local profile shape — Neurabridge-friendly field names documented below.
  *
  * Mapping notes (for optional Bridge later):
  * - confidenceThreshold → Bridge filter min confidence

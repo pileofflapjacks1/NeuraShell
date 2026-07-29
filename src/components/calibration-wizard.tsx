@@ -152,7 +152,7 @@ export function CalibrationWizard() {
             <h2 className="text-xl font-semibold">Welcome</h2>
             <p className="text-sm text-shell-muted leading-relaxed">
               This wizard tunes how NeuraShell interprets intent for <strong>you</strong>. Values
-              map to NeuralBridge-friendly profile fields (
+              map to Neurabridge-friendly profile fields (
               <code className="text-cyan-300">dwellMs</code>,{" "}
               <code className="text-cyan-300">confidenceThreshold</code>,{" "}
               <code className="text-cyan-300">switchTimingMs</code>).

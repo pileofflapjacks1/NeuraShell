@@ -98,7 +98,7 @@ const STEPS: Step[] = [
   {
     id: "export",
     title: "Export profile",
-    detail: "Download local JSON profile (NeuralBridge-friendly fields).",
+    detail: "Download local JSON profile (Neurabridge-friendly fields).",
     durationMs: 5000,
     run: () => {
       const profile = useShellStore.getState().profile;

@@ -7,7 +7,7 @@ Simulator-first. **Not** implant software. **Not** a Neuralink product. **Not** 
 ```
 User
   ↓ NeuraShell  ← modes, panic, readiness, ARM, profiles
-  ↓ NeuralBridge (optional middleware)
+  ↓ Neurabridge (optional middleware)
   ↓ Intent → OS / apps (Binder, etc.)
 ```
 
@@ -85,7 +85,7 @@ Browser cannot move the system mouse alone. Pair live posts with [Intent → OS]
 |-------|------|
 | **NeuraBeach** | Catalog — https://neurabeach.com |
 | **NeuraBinder** | End-user TCG + BCI Mode demo |
-| **NeuralBridge** | Intent middleware |
+| **Neurabridge** | Intent middleware |
 | **Intent → OS** | OS cursor/keys from velocity |
 | **Neural Flow Architect** | Flow research |
 | **NeuraShell** | **This app** — daily-driver control plane |

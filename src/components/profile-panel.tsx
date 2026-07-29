@@ -166,7 +166,7 @@ export function ProfilePanel({ compact = false }: { compact?: boolean }) {
         />
       </div>
       <p className="mt-3 text-xs text-shell-muted">
-        Stored in localStorage only. NeuralBridge-friendly field names (dwellMs,
+        Stored in localStorage only. Neurabridge-friendly field names (dwellMs,
         confidenceThreshold, switchTimingMs). No cloud / neural data upload.
       </p>
     </section>

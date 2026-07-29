@@ -1,18 +1,18 @@
 import type { IntentAdapter, IntentEvent, IntentHandler } from "@/lib/intents/types";
 
 /**
- * Optional NeuralBridge client (v0.1 stub + soft remote).
+ * Optional Neurabridge client (v0.1 stub + soft remote).
  * Degrades gracefully if Bridge package / local service is missing.
  *
  * Attempts (in order when startBridgeRemote is used):
  * 1. WebSocket ws://127.0.0.1:7711
- * 2. BroadcastChannel "neuralbridge-intent" (if another tab / service posts)
+ * 2. BroadcastChannel "neurabridge-intent" (if another tab / service posts)
  *
  * Never required for NeuraShell demos — synthetic + keyboard always work.
  */
 
 const DEFAULT_WS = "ws://127.0.0.1:7711";
-const CHANNEL = "neuralbridge-intent";
+const CHANNEL = "neurabridge-intent";
 
 function parseIntent(data: unknown): IntentEvent | null {
   if (!data || typeof data !== "object") return null;
