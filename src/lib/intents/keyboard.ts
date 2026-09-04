@@ -6,6 +6,7 @@ import type { IntentAdapter, IntentHandler } from "./types";
  * - Enter → class_label confirm
  * - Esc → synthetic stop (host maps to STOP)
  * - 1–4 → switch_binary
+ * - K → class_label key (gym / remap)
  * - Space → confirm (host may also use for Safe mode confirm)
  */
 export function createKeyboardAdapter(): IntentAdapter {
@@ -43,6 +44,12 @@ export function createKeyboardAdapter(): IntentAdapter {
     if (key === "escape") {
       e.preventDefault();
       handler({ type: "synthetic", name: "stop", t });
+      return;
+    }
+
+    if (key === "k") {
+      e.preventDefault();
+      handler({ type: "class_label", label: "key", confidence: 1, t });
       return;
     }
 

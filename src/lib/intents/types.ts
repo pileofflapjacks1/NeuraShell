@@ -17,6 +17,17 @@ export type ConnectionState =
 
 export type ShellMode = "point" | "click" | "type" | "switch" | "idle";
 
+/**
+ * Discrete gestures the wizard / gym speak in. Computer-side sim only —
+ * keyboard, dwell, switch scan, confirm. Not implant channels.
+ */
+export const GESTURE_IDS = ["dwell", "key", "switch", "confirm"] as const;
+export type GestureId = (typeof GESTURE_IDS)[number];
+
+export function isGestureId(value: unknown): value is GestureId {
+  return typeof value === "string" && (GESTURE_IDS as readonly string[]).includes(value);
+}
+
 export type IntentHandler = (event: IntentEvent) => void;
 
 export interface IntentAdapter {

@@ -33,12 +33,23 @@ export default function SettingsPage() {
         <p className="text-sm text-shell-muted">
           Advanced profile: dwell, thresholds, switch timing. Saved locally only.
         </p>
-        <Link href="/calibrate" className="shell-btn shell-btn-primary inline-flex min-h-12 px-4 no-underline">
-          Open calibration wizard
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/calibrate" className="shell-btn shell-btn-primary inline-flex min-h-12 px-4 no-underline">
+            Open calibration wizard
+          </Link>
+          <Link href="/gym" className="shell-btn shell-btn-secondary inline-flex min-h-12 px-4 no-underline">
+            Open gym
+          </Link>
+        </div>
         {profile.calibratedAt && (
           <p className="text-xs text-shell-muted">
             Last calibrated: {new Date(profile.calibratedAt).toLocaleString()}
+          </p>
+        )}
+        {profile.lastGymAt && (
+          <p className="text-xs text-shell-muted">
+            Last gym: {new Date(profile.lastGymAt).toLocaleString()} · click ← {profile.mappings.click}
+            {profile.gymRemap ? ` · remapped ${profile.gymRemap.from} → ${profile.gymRemap.to}` : ""}
           </p>
         )}
         <ProfilePanel />

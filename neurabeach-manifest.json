@@ -2,7 +2,7 @@
   "manifest_version": "1.0.0",
   "name": "neurashell",
   "display_name": "NeuraShell",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Daily-driver computer-side control plane: readiness, ARM gate, freeze UI, calibration, record/replay, Actuate OS dry-run (optional live local POST). Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.",
   "safety_class": "computer_side",
   "runtime": "web",

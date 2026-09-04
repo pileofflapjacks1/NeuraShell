@@ -6,7 +6,7 @@
 |-------|--------|
 | **Slug** | `neurashell` |
 | **Title** | NeuraShell |
-| **Version** | `0.4.0` |
+| **Version** | `0.5.0` |
 | **Category** | `accessibility` |
 | **Featured** | yes |
 | **Collection** | `col-neura-suite` |

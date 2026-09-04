@@ -1,6 +1,6 @@
 # NeuraShell
 
-**MVP 0.4.0** — computer-side **control plane** for high-bandwidth *intent* users.
+**0.5.0** — computer-side **control plane** for high-bandwidth *intent* users.
 
 Simulator-first. **Not** implant software. **Not** a Neuralink product. **Not** a medical device.
 
@@ -20,6 +20,7 @@ User
 | **Demo tour** | https://neurashell-eta.vercel.app/demo |
 | **Shell** | https://neurashell-eta.vercel.app/ |
 | **Calibrate** | https://neurashell-eta.vercel.app/calibrate |
+| **Gym** | https://neurashell-eta.vercel.app/gym |
 | **Beach listing** | https://neurabeach.com/projects/neurashell |
 | **Suite collection** | https://neurabeach.com/collections/col-neura-suite |
 | **GitHub** | https://github.com/pileofflapjacks1/NeuraShell |
@@ -36,6 +37,7 @@ pnpm dev
 | `/` | Full shell |
 | `/demo` | Scripted tour (no account) |
 | `/calibrate` | Dwell / threshold / Safe wizard |
+| `/gym` | Gym slice — remap one action (click) onto a wizard gesture |
 | `/a11y` | Accessibility scorecard |
 | `/settings` | Advanced profile |
 
@@ -46,24 +48,25 @@ pnpm build
 
 No accounts. No env secrets for the demo.
 
-## What ships (MVP 0.4)
+## What ships (0.5)
 
 | Area | Behavior |
 |------|----------|
-| **Session Ready** | Readiness score 0–100 + factor checklist |
-| **ARM gate** | Intent actuation only when ARMED; STOP disarms |
+| **Session Ready** | Hard ARM gate — required factors (gym + session + not frozen). Score does not bypass. |
+| **Gym** | `/gym` slice (180s default / 720s cap). Remap click on accept. Stale gym (>7d) or miss >35% blocks ARM. |
+| **ARM gate** | Intent actuation only when ARMED; `arm()` no-ops if `!canArm`; STOP disarms |
 | **Modes** | `point` · `click` · `type` · `switch` · `idle` |
 | **Panic + freeze** | STOP · UNDO · HOLD; freeze overlay |
 | **Calibration** | `/calibrate` → local profile |
 | **Record / Replay** | Local JSON capture + timeline replay |
-| **Actuate OS** | Dry-run preview; optional live local POST |
+| **Actuate OS** | Dry-run preview (shows mapping); live = ARM + Safe confirm + gym mapping |
 | **Catalog** | Beach `col-neura-suite` · `LISTING.md` · manifest |
 
 ### Actuate OS (dry-run first)
 
 ```bash
 pnpm os:relay   # optional: http://127.0.0.1:8765/intent
-pnpm dev        # Dry-run log · Live needs ARM + Safe confirm
+pnpm dev        # Dry-run log · Live needs ARM + Safe confirm + gym
 ```
 
 Browser cannot move the system mouse alone. Pair live posts with [Intent → OS](https://github.com/pileofflapjacks1/neurabeach/tree/main/packages/intent-to-os) or the relay NDJSON.
@@ -78,6 +81,7 @@ Browser cannot move the system mouse alone. Pair live posts with [Intent → OS]
 | Esc | STOP |
 | ⌘Z / Ctrl+Z | UNDO |
 | 1–4 | switch indices |
+| K | key gesture (gym / remap) |
 
 ## Suite map
 

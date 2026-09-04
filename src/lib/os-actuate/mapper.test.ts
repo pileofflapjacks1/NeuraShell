@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatOsPreview, intentToOsSample } from "./mapper";
+import { DEFAULT_MAPPINGS } from "@/lib/intents/mapping";
 
 describe("intentToOsSample", () => {
   it("maps velocity_2d", () => {
@@ -27,6 +28,25 @@ describe("intentToOsSample", () => {
       { clickThreshold: 0.65 }
     );
     expect(s?.click).toBe(0);
+  });
+
+  it("after accepted gym remap, mapper emits the new gesture id", () => {
+    const mappings = { ...DEFAULT_MAPPINGS, click: "switch" as const };
+    const viaSwitch = intentToOsSample(
+      { type: "switch_binary", index: 1, active: true, t: 1000 },
+      { mappings }
+    );
+    expect(viaSwitch?.click).toBeGreaterThanOrEqual(0.85);
+
+    const viaOldConfirm = intentToOsSample(
+      { type: "class_label", label: "confirm", confidence: 0.95, t: 1000 },
+      { mappings }
+    );
+    expect(viaOldConfirm).toBeNull();
+
+    const preview = formatOsPreview(viaSwitch!, "dry-run", false, "switch", "switch");
+    expect(preview.text).toMatch(/via switch/);
+    expect(preview.text).toMatch(/click←switch/);
   });
 });
 

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://neurashell-eta.vercel.app"),
   title: "NeuraShell — computer-side intent control plane",
   description:
-    "MVP control plane for high-bandwidth intent: readiness, ARM, panic, calibrate, record/replay, Actuate OS dry-run. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.",
+    "Control plane for high-bandwidth intent: gym, hard ARM gate, panic, calibrate, record/replay, Actuate OS dry-run. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.",
   keywords: [
     "accessibility",
     "BCI",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "Neura Suite",
   ],
   openGraph: {
-    title: "NeuraShell — MVP 0.4",
+    title: "NeuraShell — 0.5",
     description:
       "Computer-side control plane: readiness, ARM, panic, calibrate, record/replay, OS dry-run. Not implant software.",
     type: "website",

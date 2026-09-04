@@ -25,6 +25,9 @@ export function ActuateOsPanel() {
   const safeMode = useShellStore((s) => s.safeMode);
   const hold = useShellStore((s) => s.hold);
   const frozen = useShellStore((s) => s.frozen);
+  const mappings = useShellStore((s) => s.profile.mappings);
+  const gymRemap = useShellStore((s) => s.profile.gymRemap);
+  const lastGymAt = useShellStore((s) => s.profile.lastGymAt);
 
   const [confirmLive, setConfirmLive] = useState(false);
   const [probing, setProbing] = useState(false);
@@ -79,8 +82,16 @@ export function ActuateOsPanel() {
       <p className="mb-3 text-xs leading-relaxed text-shell-muted">
         Maps intents to Intent→OS samples (<code className="text-cyan-300">vx, vy, click, t</code>).
         <strong className="text-shell-fg"> Dry-run is the default</strong> — preview only, no OS
-        pointer. Live POSTs JSON to a local endpoint (optional relay). STOP always drops live →
+        pointer. Live needs ARM + Safe confirm + a current gym mapping. STOP always drops live →
         dry-run. Not implant software.
+      </p>
+
+      <p className="mb-3 rounded-lg border border-shell-border bg-shell-bg px-3 py-2 text-xs text-shell-fg/90">
+        Mapping that would fire: <strong className="text-cyan-300">click ← {mappings.click}</strong>
+        {" · "}confirm ← {mappings.confirm}
+        {" · "}stop ← {mappings.stop}
+        {gymRemap ? ` · gym remapped click ${gymRemap.from} → ${gymRemap.to}` : ""}
+        {!lastGymAt ? " · no gym yet — live blocked" : ""}
       </p>
 
       <div className="mb-3 flex flex-wrap gap-2">
@@ -120,7 +131,13 @@ export function ActuateOsPanel() {
               ? "border-orange-400 bg-orange-600/40 text-orange-50"
               : "border-orange-500/40 bg-orange-950/40 text-orange-100"
           )}
-          title={!armed ? "ARM the shell first" : "POST samples to local endpoint"}
+          title={
+            !armed
+              ? "ARM the shell first"
+              : !lastGymAt
+                ? "Gym mapping required for live"
+                : "POST samples to local endpoint"
+          }
         >
           Live
         </button>

@@ -1,11 +1,12 @@
 /**
- * Session readiness score — pure function for tests + UI.
- * Shell is "about control": when am I allowed to arm actuation?
+ * Session readiness — ARM gate, not a scoreboard.
+ * Gym freshness is a hard required factor when missing / stale / high miss.
  */
+
+import { gymIsFresh, GYM_FAIL_MISS, GYM_STALE_MS } from "@/lib/gym";
 
 export type ReadinessInput = {
   connected: boolean;
-  calibrated: boolean;
   frozen: boolean; // STOP or HOLD
   armed: boolean;
   safeMode: boolean;
@@ -18,6 +19,9 @@ export type ReadinessInput = {
   confidenceThreshold: number;
   replaying: boolean;
   recording: boolean;
+  lastGymAt: number | null;
+  lastGymMissRate: number | null;
+  driftNudge?: boolean;
 };
 
 export type ReadinessFactor = {
@@ -40,12 +44,29 @@ export type ReadinessResult = {
 const FRESH_MS = 4000;
 
 export function computeReadiness(input: ReadinessInput, now = Date.now()): ReadinessResult {
-  void now;
   const fresh =
     input.msSinceIntent !== null && input.msSinceIntent >= 0 && input.msSinceIntent <= FRESH_MS;
 
   const mean = input.confidenceMean ?? input.confidence;
   const signalOk = fresh && mean >= Math.min(0.25, input.confidenceThreshold * 0.4);
+
+  const gymOk = gymIsFresh(input.lastGymAt, input.lastGymMissRate, now);
+  const gymRequired = !gymOk;
+
+  let gymDetail: string;
+  if (gymOk) {
+    const ageMin = Math.max(0, Math.round((now - (input.lastGymAt ?? now)) / 60000));
+    const missPct = Math.round((input.lastGymMissRate ?? 0) * 100);
+    gymDetail = `Gym slice ok (${ageMin} min ago, miss ${missPct}%).`;
+  } else if (input.lastGymAt == null) {
+    gymDetail = "Never gym'd — run /gym (slice) before ARM.";
+  } else if (now - input.lastGymAt > GYM_STALE_MS) {
+    gymDetail = "Gym older than 7 days — re-run /gym.";
+  } else if ((input.lastGymMissRate ?? 0) > GYM_FAIL_MISS) {
+    gymDetail = `Last gym miss rate ${Math.round((input.lastGymMissRate ?? 0) * 100)}% > 35% — re-run /gym.`;
+  } else {
+    gymDetail = "Gym not current — run /gym.";
+  }
 
   const factors: ReadinessFactor[] = [
     {
@@ -72,13 +93,11 @@ export function computeReadiness(input: ReadinessInput, now = Date.now()): Readi
     },
     {
       id: "calibrated",
-      label: "Calibrated",
-      pass: input.calibrated,
-      required: false,
+      label: "Calibrated (gym)",
+      pass: gymOk,
+      required: gymRequired,
       weight: 20,
-      detail: input.calibrated
-        ? "Profile has calibration stamp."
-        : "Optional but recommended — run /calibrate.",
+      detail: gymDetail,
     },
     {
       id: "signal",
@@ -111,15 +130,15 @@ export function computeReadiness(input: ReadinessInput, now = Date.now()): Readi
   const score = total > 0 ? Math.round((earned / total) * 100) : 0;
 
   const requiredOk = factors.filter((f) => f.required).every((f) => f.pass);
-  const canArm = requiredOk && score >= 55 && !input.frozen;
+  // Hard gate: required factors only. No score >= 55 bypass.
+  const canArm = requiredOk && !input.frozen;
 
   let level: ReadinessResult["level"] = "blocked";
-  if (canArm && score >= 80) level = "ready";
-  else if (canArm || (requiredOk && score >= 40)) level = "caution";
-  else level = "blocked";
+  if (!canArm) level = "blocked";
+  else if (score >= 80) level = "ready";
+  else level = "caution";
 
-  if (input.armed && !input.frozen) {
-    // Armed is a runtime state — boost presentation
+  if (input.armed && !input.frozen && canArm) {
     if (level === "caution") level = "ready";
   }
 
@@ -129,9 +148,11 @@ export function computeReadiness(input: ReadinessInput, now = Date.now()): Readi
       : "Armed — intent may actuate modes."
     : canArm
       ? "Ready to arm actuation."
-      : requiredOk
-        ? "Improve signal/calibration, then arm."
-        : "Connect a session and clear freeze to arm.";
+      : gymRequired
+        ? "Gym required before ARM — open /gym."
+        : requiredOk
+          ? "Improve signal, then arm."
+          : "Connect a session and clear freeze to arm.";
 
   return { score, factors, canArm, level, summary };
 }

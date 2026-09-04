@@ -67,10 +67,10 @@ export default function A11yPage() {
     },
     {
       id: "readiness-arm",
-      label: "Readiness score + ARM gate",
+      label: "Readiness hard ARM gate",
       pass: true,
       detail:
-        "Session Ready shows 0–100 score and required factors; intent actuation needs ARM; STOP disarms.",
+        "Session Ready required factors (gym + session + not frozen) gate ARM; score does not bypass; STOP disarms.",
     },
     {
       id: "record-replay",
@@ -83,15 +83,15 @@ export default function A11yPage() {
       label: "Actuate OS dry-run default",
       pass: true,
       detail:
-        "OS path defaults to dry-run preview; live needs ARM + confirm; STOP drops live → dry-run.",
+        "OS path defaults to dry-run preview; live needs ARM + Safe confirm + gym mapping; STOP drops live → dry-run.",
     },
     {
       id: "calibration",
-      label: "Calibration wizard path",
+      label: "Calibration + gym path",
       pass: true,
       detail: calibratedAt
-        ? `Profile calibrated at ${new Date(calibratedAt).toLocaleString()}.`
-        : "Wizard at /calibrate — recommended once per profile.",
+        ? `Profile calibrated at ${new Date(calibratedAt).toLocaleString()}. Gym at /gym is required to ARM.`
+        : "Wizard at /calibrate, then /gym — gym is required to ARM.",
     },
     {
       id: "keyboard-path",

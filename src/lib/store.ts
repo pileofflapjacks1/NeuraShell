@@ -19,8 +19,21 @@ import {
   type OsActuateMode,
   type OsPreviewLine,
 } from "@/lib/os-actuate/types";
-import { formatOsPreview, intentToOsSample } from "@/lib/os-actuate/mapper";
+import {
+  formatOsPreview,
+  intentToOsSample,
+  mappingGestureForSample,
+} from "@/lib/os-actuate/mapper";
 import { postOsSample } from "@/lib/os-actuate/client";
+import { computeReadiness, meanConfidence, type ReadinessInput } from "@/lib/readiness";
+import {
+  calibratedEnough,
+  driftIsBad,
+  DRIFT_WINDOW_MS,
+  gymIsFresh,
+  type GymRemap,
+} from "@/lib/gym";
+import { intentMatchesAction } from "@/lib/intents/mapping";
 
 export type UndoAction =
   | { kind: "mode"; from: ShellMode; to: ShellMode }
@@ -42,6 +55,7 @@ export interface ShellState {
   confidence: number;
   confidenceSamples: Array<{ t: number; c: number }>;
   lastIntentAt: number | null;
+  lastIntent: IntentEvent | null;
   profile: ShellProfile;
   cursor: { x: number; y: number };
   clickTargetId: string | null;
@@ -77,6 +91,10 @@ export interface ShellState {
   osPostCount: number;
   osErrorCount: number;
 
+  /** Drift nudge: rolling confidence bad while armed — never silent remap. */
+  driftNudge: boolean;
+  driftBadSince: number | null;
+
   // Actions
   hydrate: () => void;
   setConnection: (c: ConnectionState) => void;
@@ -100,9 +118,12 @@ export interface ShellState {
   setSwitchIndex: (i: number) => void;
   setCalibrating: (on: boolean) => void;
   completeCalibration: (partial: Partial<ShellProfile>) => void;
+  completeGym: (opts: { missRate: number; remap?: GymRemap }) => void;
 
   arm: () => boolean;
   disarm: () => void;
+  evaluateDrift: (now?: number) => void;
+  clearDriftNudge: () => void;
 
   startRecording: () => void;
   stopRecording: () => IntentRecording | null;
@@ -133,6 +154,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
   confidence: 0,
   confidenceSamples: [],
   lastIntentAt: null,
+  lastIntent: null,
   profile: { ...DEFAULT_PROFILE },
   cursor: { x: 0.5, y: 0.5 },
   clickTargetId: null,
@@ -156,18 +178,21 @@ export const useShellStore = create<ShellState>((set, get) => ({
   osLiveOk: null,
   osPostCount: 0,
   osErrorCount: 0,
+  driftNudge: false,
+  driftBadSince: null,
 
   hydrate: () => {
     if (get().hydrated) return;
     const profile = loadProfile();
+    const gymOk = gymIsFresh(profile.lastGymAt, profile.lastGymMissRate);
     set({
       profile,
       safeMode: profile.safeMode,
       mode: profile.defaultMode,
       hydrated: true,
-      statusMessage: profile.calibratedAt
-        ? "Ready. Connect a session, then ARM when the readiness score allows."
-        : "Ready. Calibrate, connect a session, then ARM for actuation.",
+      statusMessage: gymOk
+        ? "Ready. Connect a session, then ARM when Session Ready allows."
+        : "Gym required before ARM — open /gym (slice). Calibrate first if this is a new profile.",
     });
   },
 
@@ -352,7 +377,12 @@ export const useShellStore = create<ShellState>((set, get) => ({
       const confidenceSamples = [...get().confidenceSamples, { t, c: clamp01(c) }].slice(
         -MAX_SAMPLES
       );
-      set({ confidence: clamp01(c), confidenceSamples, lastIntentAt: t });
+      set({
+        confidence: clamp01(c),
+        confidenceSamples,
+        lastIntentAt: t,
+        lastIntent: event,
+      });
     };
 
     if (state.hold || state.frozen) {
@@ -381,7 +411,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
       return;
     }
 
-    set({ lastIntentAt: event.t });
+    set({ lastIntentAt: event.t, lastIntent: event });
 
     const mayActuate = state.armed || state.replaying || state.calibrating;
 
@@ -410,12 +440,12 @@ export const useShellStore = create<ShellState>((set, get) => ({
       const threshold = state.profile.confidenceThreshold * (state.safeMode ? 1.05 : 1);
       if (event.confidence < threshold) return;
 
-      if (state.pendingMode && (event.label === "confirm" || event.label === "select")) {
+      if (state.pendingMode && intentMatchesAction(event, "confirm", state.profile.mappings)) {
         get().confirmPendingMode();
         return;
       }
 
-      if (state.mode === "click" && (event.label === "confirm" || event.label === "select")) {
+      if (state.mode === "click" && intentMatchesAction(event, "click", state.profile.mappings)) {
         const id = quadrantTarget(state.cursor.x, state.cursor.y);
         get().setClickTarget(id);
         return;
@@ -428,6 +458,26 @@ export const useShellStore = create<ShellState>((set, get) => ({
       maybeEmitOs(get, event);
       if (mayActuate) {
         set({ switchIndex: event.index });
+        if (
+          state.mode === "click" &&
+          intentMatchesAction(event, "click", state.profile.mappings)
+        ) {
+          const id = quadrantTarget(state.cursor.x, state.cursor.y);
+          get().setClickTarget(id);
+        }
+      }
+    }
+
+    if (event.type === "synthetic" && event.name === "dwell") {
+      pushSample(0.9, event.t);
+      maybeEmitOs(get, event);
+      if (
+        mayActuate &&
+        state.mode === "click" &&
+        intentMatchesAction(event, "click", state.profile.mappings)
+      ) {
+        const id = quadrantTarget(state.cursor.x, state.cursor.y);
+        get().setClickTarget(id);
       }
     }
   },
@@ -497,14 +547,37 @@ export const useShellStore = create<ShellState>((set, get) => ({
     });
   },
 
+  completeGym: ({ missRate, remap }) => {
+    const prev = get().profile;
+    const mappings = { ...prev.mappings };
+    if (remap) {
+      mappings.click = remap.to;
+    }
+    const profile = sanitizeProfile({
+      ...prev,
+      mappings,
+      lastGymAt: Date.now(),
+      lastGymMissRate: missRate,
+      gymRemap: remap ?? prev.gymRemap,
+    });
+    saveProfile(profile);
+    set({
+      profile,
+      driftNudge: false,
+      driftBadSince: null,
+      statusMessage: remap
+        ? `Gym saved — remapped click ${remap.from} → ${remap.to} (miss ${Math.round(missRate * 100)}%).`
+        : `Gym slice saved — miss ${Math.round(missRate * 100)}%. ARM when Session Ready allows.`,
+    });
+  },
+
   arm: () => {
     const s = get();
-    if (s.hold || s.frozen) {
-      set({ statusMessage: "Cannot ARM while frozen — RELEASE first." });
-      return false;
-    }
-    if (s.connection === "disconnected" && !s.replaying) {
-      set({ statusMessage: "Cannot ARM without a session — start synthetic first." });
+    const readiness = computeReadiness(readinessInputFromState(s));
+    if (!readiness.canArm) {
+      set({
+        statusMessage: `Cannot ARM — ${readiness.summary}`,
+      });
       return false;
     }
     set({
@@ -559,6 +632,15 @@ export const useShellStore = create<ShellState>((set, get) => ({
       set({ statusMessage: "ARM the shell before enabling OS live posts." });
       return false;
     }
+    const readiness = computeReadiness(readinessInputFromState(s));
+    if (!s.replaying && !readiness.canArm) {
+      set({ statusMessage: "Cannot enable OS live — Session Ready cannot ARM." });
+      return false;
+    }
+    if (!calibratedEnough(s.profile) || !s.profile.mappings.click) {
+      set({ statusMessage: "Cannot enable OS live — gym mapping missing or stale. Run /gym." });
+      return false;
+    }
     set({
       osMode: "live",
       statusMessage: `OS live → POST ${s.osEndpoint} (STOP drops to dry-run).`,
@@ -566,10 +648,34 @@ export const useShellStore = create<ShellState>((set, get) => ({
     get().pushOsPreview({
       at: Date.now(),
       kind: "info",
-      text: `Live enabled → ${s.osEndpoint}`,
+      text: `Live enabled → ${s.osEndpoint} · click←${s.profile.mappings.click}`,
     });
     return true;
   },
+
+  evaluateDrift: (now = Date.now()) => {
+    const s = get();
+    if (!s.armed || s.hold || s.frozen) {
+      if (!s.armed) set({ driftBadSince: null });
+      return;
+    }
+    const mean = meanConfidence(s.confidenceSamples, 2500, now);
+    if (!driftIsBad(mean)) {
+      if (s.driftBadSince != null) set({ driftBadSince: null });
+      return;
+    }
+    const since = s.driftBadSince ?? now;
+    if (s.driftBadSince == null) set({ driftBadSince: now });
+    if (now - since >= DRIFT_WINDOW_MS && !s.driftNudge) {
+      set({
+        driftNudge: true,
+        statusMessage: "Signal drift — run gym. HOLD applied (no silent remap).",
+      });
+      get().panicHold();
+    }
+  },
+
+  clearDriftNudge: () => set({ driftNudge: false, driftBadSince: null }),
 
   pushOsPreview: (line) => {
     osPreviewSeq += 1;
@@ -638,6 +744,41 @@ function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
 }
 
+export function readinessInputFromState(
+  s: Pick<
+    ShellState,
+    | "connection"
+    | "hold"
+    | "frozen"
+    | "armed"
+    | "safeMode"
+    | "lastIntentAt"
+    | "confidence"
+    | "confidenceSamples"
+    | "profile"
+    | "replaying"
+    | "recording"
+    | "driftNudge"
+  >,
+  now = Date.now()
+): ReadinessInput {
+  return {
+    connected: s.connection !== "disconnected",
+    frozen: s.hold || s.frozen,
+    armed: s.armed,
+    safeMode: s.safeMode,
+    msSinceIntent: s.lastIntentAt == null ? null : now - s.lastIntentAt,
+    confidence: s.confidence,
+    confidenceMean: meanConfidence(s.confidenceSamples, 2500, now),
+    confidenceThreshold: s.profile.confidenceThreshold,
+    replaying: s.replaying,
+    recording: s.recording,
+    lastGymAt: s.profile.lastGymAt ?? null,
+    lastGymMissRate: s.profile.lastGymMissRate ?? null,
+    driftNudge: s.driftNudge,
+  };
+}
+
 /**
  * Forward intents to OS dry-run preview and optional live HTTP POST.
  * Dry-run never touches the system pointer — browser cannot move OS mouse without
@@ -648,13 +789,19 @@ function maybeEmitOs(get: () => ShellState, event: IntentEvent) {
   if (state.osMode === "off") return;
   if (state.hold || state.frozen) return;
 
-  // Dry-run can preview with a session; live requires ARM (or replay)
-  const mayStream =
-    state.osMode === "dry-run"
-      ? state.connection !== "disconnected" || state.replaying || state.calibrating
-      : state.armed || state.replaying;
-
-  if (!mayStream) return;
+  // Dry-run can preview with a session; live requires ARM + gym mapping (or replay)
+  if (state.osMode === "live") {
+    const liveOk =
+      (state.armed || state.replaying) &&
+      (state.replaying ||
+        (computeReadiness(readinessInputFromState(state)).canArm &&
+          calibratedEnough(state.profile)));
+    if (!liveOk) return;
+  } else {
+    const mayStream =
+      state.connection !== "disconnected" || state.replaying || state.calibrating;
+    if (!mayStream) return;
+  }
 
   // Prefer OS stream in point/click; still allow click events in other modes
   if (
@@ -668,6 +815,7 @@ function maybeEmitOs(get: () => ShellState, event: IntentEvent) {
 
   const sample = intentToOsSample(event, {
     clickThreshold: state.profile.confidenceThreshold,
+    mappings: state.profile.mappings,
   });
   if (!sample) return;
 
@@ -686,7 +834,14 @@ function maybeEmitOs(get: () => ShellState, event: IntentEvent) {
   lastOsPreviewMs = now;
 
   const mode = state.osMode === "live" ? "live" : "dry-run";
-  const fmt = formatOsPreview(sample, mode === "live" ? "live" : "dry-run", false);
+  const via = mappingGestureForSample(event, state.profile.mappings);
+  const fmt = formatOsPreview(
+    sample,
+    mode === "live" ? "live" : "dry-run",
+    false,
+    via,
+    state.profile.mappings.click
+  );
   get().pushOsPreview({ at: now, kind: fmt.kind, text: fmt.text });
   setOsLast(get, now);
 

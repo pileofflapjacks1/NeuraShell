@@ -22,6 +22,9 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
   const apiRef = useRef<IntentSessionApi | null>(null);
   const [, bump] = useState(0);
   const calibratedAt = useShellStore((s) => s.profile.calibratedAt);
+  const lastGymAt = useShellStore((s) => s.profile.lastGymAt);
+  const gymRemap = useShellStore((s) => s.profile.gymRemap);
+  const mappings = useShellStore((s) => s.profile.mappings);
   const armed = useShellStore((s) => s.armed);
 
   const onAdaptersReady = useCallback((api: IntentSessionApi) => {
@@ -44,7 +47,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
               Control plane
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-shell-muted sm:text-base">
-              Readiness + ARM · freeze · calibration · record/replay · Actuate OS dry-run.
+              Gym + hard ARM gate · freeze · calibration · record/replay · Actuate OS dry-run.
               Simulator-first.
             </p>
           </div>
@@ -59,22 +62,44 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
               {armed ? "ARMED" : "DISARMED"}
             </span>
             <Link
-              href="/calibrate"
+              href="/gym"
               className="shell-btn shell-btn-primary min-h-12 px-4 no-underline text-sm"
+            >
+              {lastGymAt ? "Re-run gym" : "Gym"}
+            </Link>
+            <Link
+              href="/calibrate"
+              className="shell-btn shell-btn-secondary min-h-12 px-4 no-underline text-sm"
             >
               {calibratedAt ? "Recalibrate" : "Calibrate"}
             </Link>
           </div>
         </div>
 
-        {!calibratedAt && (
+        {!lastGymAt && (
           <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/30 px-4 py-3 text-sm text-cyan-50">
-            No calibration on this profile yet.{" "}
-            <Link href="/calibrate" className="font-semibold underline-offset-2 hover:underline">
-              Run the wizard
-            </Link>{" "}
-            to set dwell, confidence threshold, and Safe defaults.
+            ARM is blocked until a gym slice is saved.{" "}
+            <Link href="/gym" className="font-semibold underline-offset-2 hover:underline">
+              Run gym
+            </Link>
+            {!calibratedAt ? (
+              <>
+                {" "}
+                (thresholds:{" "}
+                <Link href="/calibrate" className="font-semibold underline-offset-2 hover:underline">
+                  calibrate
+                </Link>
+                ).
+              </>
+            ) : (
+              "."
+            )}
           </div>
+        )}
+        {gymRemap && (
+          <p className="text-sm text-cyan-200">
+            Gym remapped click → {mappings.click}.
+          </p>
         )}
 
         <SessionReady
@@ -107,7 +132,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
       </main>
 
       <footer className="border-t border-shell-border py-4 text-center text-xs text-shell-muted">
-        NeuraShell v0.4 · suite_role: app · computer_side · MIT ·{" "}
+        NeuraShell v0.5 · suite_role: app · computer_side · MIT ·{" "}
         <a href="https://neurabeach.com" className="text-cyan-400 underline-offset-2 hover:underline">
           NeuraBeach
         </a>
@@ -133,9 +158,10 @@ function KeyboardCheatsheet() {
           <kbd className="kbd">Esc</kbd> STOP · <kbd className="kbd">⌘Z</kbd> UNDO
         </li>
         <li>
-          <kbd className="kbd">1</kbd>–<kbd className="kbd">4</kbd> switch indices
+          <kbd className="kbd">1</kbd>–<kbd className="kbd">4</kbd> switch ·{" "}
+          <kbd className="kbd">K</kbd> key gesture
         </li>
-        <li className="text-shell-muted">Actuation requires ARM when readiness allows</li>
+        <li className="text-shell-muted">Actuation requires gym + ARM (score does not bypass)</li>
       </ul>
     </div>
   );

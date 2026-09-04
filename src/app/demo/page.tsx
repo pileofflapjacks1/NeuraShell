@@ -35,20 +35,20 @@ const STEPS: Step[] = [
   {
     id: "safe-arm",
     title: "Safe + ARM",
-    detail: "Safe mode ON, then ARM when readiness allows.",
+    detail: "Safe mode ON, stamp gym slice, then ARM (hard gate).",
     durationMs: 6000,
     run: () => {
       const s = useShellStore.getState();
       s.setSafeMode(true);
       s.releaseHold();
-      // synthetic will raise readiness; force-arm after session is up
+      // Scripted gym stamp so the tour can ARM (fail-closed otherwise).
+      s.completeGym({ missRate: 0 });
       const ok = s.arm();
       s.setStatus(
         ok
-          ? "Demo: ARMED — actuation enabled."
-          : "Demo: arm attempted (need session + not frozen)."
+          ? "Demo: gym stamped + ARMED — actuation enabled."
+          : "Demo: arm attempted (need session + gym + not frozen)."
       );
-      // Retry arm shortly once intents flow
       setTimeout(() => useShellStore.getState().arm(), 400);
     },
   },

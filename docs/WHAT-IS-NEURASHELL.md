@@ -1,13 +1,13 @@
 # What NeuraShell is (and is not)
 
 One-page suite copy for Beach, demos, and collaborators.  
-**Version:** 0.4.0 MVP · **Role:** `suite_role: app` (control shell)
+**Version:** 0.5.0 · **Role:** `suite_role: app` (control shell)
 
 ---
 
 ## One-liner
 
-> Daily-driver **computer-side control plane** for high-bandwidth intent users: session ready, modes, panic stop/undo, calibration, profiles, record/replay, Actuate OS dry-run. Simulator-first.
+> Daily-driver **computer-side control plane** for high-bandwidth intent users: gym slice, hard ARM gate, modes, panic stop/undo, calibration, profiles, record/replay, Actuate OS dry-run. Simulator-first.
 
 ---
 
@@ -15,7 +15,7 @@ One-page suite copy for Beach, demos, and collaborators.
 
 | | |
 |--|--|
-| **A control plane** | Modes, panic, readiness, ARM gate, local profiles — so apps don’t reimplement safety |
+| **A control plane** | Modes, panic, gym, hard ARM gate, local profiles — so apps don’t reimplement safety |
 | **Computer-side software** | Runs in the browser; consumes **generic intent streams** / simulation |
 | **Simulator-first** | Keyboard + synthetic work with zero hardware |
 | **Agency-first** | STOP / UNDO / HOLD always reachable; freeze UI; STOP disarms and kills live OS |
@@ -55,6 +55,7 @@ North star: *Beach finds tools · Binder is the live demo · Bridge is how apps 
 | Demo tour | https://neurashell-eta.vercel.app/demo |
 | Full shell | https://neurashell-eta.vercel.app/ |
 | Calibrate | https://neurashell-eta.vercel.app/calibrate |
+| Gym | https://neurashell-eta.vercel.app/gym |
 | Beach card | https://neurabeach.com/projects/neurashell |
 | Source | https://github.com/pileofflapjacks1/NeuraShell |
 
@@ -67,9 +68,9 @@ No accounts. No env secrets for the demo.
 
 ---
 
-## MVP scope lock (0.4.0)
+## Scope lock (0.5.0)
 
-**In:** readiness, ARM, modes, panic/freeze, calibrate, profiles, record/replay, OS dry-run, Beach listing.  
+**In:** gym slice + remap-on-accept, hard ARM gate (no score bypass), freeze, calibrate, profiles v0.3 mappings, record/replay, OS dry-run (live = ARM + Safe + gym mapping), Beach listing.  
 **Out (for later):** undo timeline UI, PWA, custom domain, hard Bridge package, full desktop driver in-browser.
 
 ---

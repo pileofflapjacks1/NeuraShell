@@ -1,8 +1,8 @@
-# Ship — NeuraShell MVP 0.4.0
+# Ship — NeuraShell 0.5.0
 
-**Status:** shipped  
-**Date:** 2026-07-21  
-**Tag intent:** `v0.4.0` / product freeze for MVP demos  
+**Status:** gym + hard ARM gate  
+**Date:** 2026-09-03  
+**Tag intent:** `v0.5.0`  
 
 ---
 
@@ -14,23 +14,26 @@
 - [x] Shell home: https://neurashell-eta.vercel.app/  
 - [x] Beach listing: https://neurabeach.com/projects/neurashell  
 - [x] Suite collection: https://neurabeach.com/collections/col-neura-suite  
-- [x] `neurabeach-manifest.json` + `LISTING.md` at 0.4.0  
-- [x] `CHANGELOG.md` through 0.4.0  
+- [x] `neurabeach-manifest.json` + `LISTING.md` at 0.5.0  
+- [x] `CHANGELOG.md` through 0.5.0  
 - [x] Suite one-pager: [`docs/WHAT-IS-NEURASHELL.md`](./docs/WHAT-IS-NEURASHELL.md)  
 - [x] Screenshots under `/public/screenshots/` (+ OG)  
 - [x] Safety disclaimer on all pages  
 - [x] No implant / medical / Neuralink affiliation claims  
+- [x] Fresh profile cannot ARM; gym accept unlocks ARM  
+- [x] Live OS refuses without ARM + Safe confirm + gym mapping; STOP → dry-run  
 
 ---
 
 ## Smoke path (human)
 
 1. Open `/demo` — tour runs without login  
-2. Open `/` — Start synthetic → readiness rises → **ARM**  
-3. Esc → freeze UI → Space/RELEASE  
-4. `/calibrate` → save profile (local)  
-5. Actuate OS → **Dry-run** — log shows move/click samples  
-6. Optional local: `pnpm os:relay` then Live (after ARM)  
+2. Open `/` — Start synthetic → **ARM blocked** until gym  
+3. `/gym` — slice trials → accept remap if offered → back to shell → **ARM**  
+4. Esc → freeze UI → Space/RELEASE  
+5. `/calibrate` → save profile (local) → continue to gym  
+6. Actuate OS → **Dry-run** — log shows mapping that would fire (`click←…`)  
+7. Optional local: `pnpm os:relay` then Live (after ARM + Safe confirm + gym)  
 
 ---
 
@@ -38,9 +41,9 @@
 
 | Artifact | Version |
 |----------|---------|
-| `package.json` | `0.4.0` |
-| `neurabeach-manifest.json` | `0.4.0` |
-| `LISTING.md` | `0.4.0` |
+| `package.json` | `0.5.0` |
+| `neurabeach-manifest.json` | `0.5.0` |
+| `LISTING.md` | `0.5.0` |
 | Beach seed (catalog) | keep in sync on Beach deploys |
 
 **Do not bump** for cosmetic docs-only fixes unless you re-list on Beach.
@@ -50,8 +53,8 @@
 ## Suggested git tag
 
 ```bash
-git tag -a v0.4.0 -m "NeuraShell MVP 0.4.0"
-git push origin v0.4.0
+git tag -a v0.5.0 -m "NeuraShell 0.5.0 gym + hard ARM gate"
+git push origin v0.5.0
 ```
 
 ---

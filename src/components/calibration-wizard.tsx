@@ -120,7 +120,8 @@ export function CalibrationWizard() {
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Calibration</h1>
         <p className="mt-1 text-sm text-shell-muted">
           Set Safe mode, confidence threshold, dwell, and switch timing. Saved locally into your
-          profile — no cloud, no neural data upload.
+          profile — no cloud, no neural data upload. ARM still requires a gym slice after this
+          wizard.
         </p>
       </div>
 
@@ -371,7 +372,10 @@ export function CalibrationWizard() {
               <div className="space-y-3 rounded-xl border border-emerald-700/50 bg-emerald-950/30 p-4">
                 <p className="font-semibold text-emerald-100">Calibration saved locally.</p>
                 <div className="flex flex-wrap gap-2">
-                  <Link href="/" className="shell-btn shell-btn-primary min-h-12 px-4 no-underline">
+                  <Link href="/gym" className="shell-btn shell-btn-primary min-h-12 px-4 no-underline">
+                    Continue to gym
+                  </Link>
+                  <Link href="/" className="shell-btn shell-btn-secondary min-h-12 px-4 no-underline">
                     Back to shell
                   </Link>
                   <button

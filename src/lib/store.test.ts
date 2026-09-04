@@ -1,6 +1,17 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useShellStore } from "./store";
-import { DEFAULT_PROFILE } from "./profiles/schema";
+import { DEFAULT_PROFILE, sanitizeProfile } from "./profiles/schema";
+import { DEFAULT_MAPPINGS } from "./intents/mapping";
+
+function gymProfile() {
+  return sanitizeProfile({
+    ...DEFAULT_PROFILE,
+    calibratedAt: "2026-07-21T00:00:00.000Z",
+    lastGymAt: Date.now(),
+    lastGymMissRate: 0.1,
+    mappings: { ...DEFAULT_MAPPINGS },
+  });
+}
 
 function resetStore() {
   useShellStore.setState({
@@ -13,8 +24,9 @@ function resetStore() {
     frozenAt: null,
     confidence: 0.5,
     confidenceSamples: [],
-    lastIntentAt: null,
-    profile: { ...DEFAULT_PROFILE, calibratedAt: "2026-07-21T00:00:00.000Z" },
+    lastIntentAt: Date.now(),
+    lastIntent: null,
+    profile: gymProfile(),
     cursor: { x: 0.5, y: 0.5 },
     clickTargetId: null,
     typed: "",
@@ -37,6 +49,8 @@ function resetStore() {
     osLiveOk: null,
     osPostCount: 0,
     osErrorCount: 0,
+    driftNudge: false,
+    driftBadSince: null,
   });
 }
 
@@ -137,7 +151,34 @@ describe("shell store panic + modes", () => {
     expect(p.dwellMs).toBe(800);
     expect(p.confidenceThreshold).toBe(0.7);
     expect(p.calibratedAt).toBeTruthy();
-    expect(p.version).toBe("0.2.0");
+    expect(p.version).toBe("0.3.0");
+  });
+
+  it("uncalibrated profile cannot arm", () => {
+    useShellStore.setState({
+      profile: { ...DEFAULT_PROFILE },
+      lastIntentAt: Date.now(),
+    });
+    expect(useShellStore.getState().arm()).toBe(false);
+    expect(useShellStore.getState().armed).toBe(false);
+    expect(useShellStore.getState().statusMessage).toMatch(/Cannot ARM/i);
+  });
+
+  it("completeGym persist remap so next ARM is allowed", () => {
+    useShellStore.setState({ profile: { ...DEFAULT_PROFILE } });
+    expect(useShellStore.getState().arm()).toBe(false);
+    useShellStore.getState().completeGym({
+      missRate: 0.4,
+      remap: { from: "confirm", to: "switch", reason: "gym miss" },
+    });
+    const p = useShellStore.getState().profile;
+    expect(p.mappings.click).toBe("switch");
+    expect(p.gymRemap?.to).toBe("switch");
+    expect(p.lastGymAt).toBeTruthy();
+    // miss 0.4 > 0.35 still blocks ARM
+    expect(useShellStore.getState().arm()).toBe(false);
+    useShellStore.getState().completeGym({ missRate: 0.1 });
+    expect(useShellStore.getState().arm()).toBe(true);
   });
 
   it("records intents and builds lastRecording on stop", () => {
@@ -199,5 +240,44 @@ describe("shell store panic + modes", () => {
     useShellStore.getState().arm();
     expect(useShellStore.getState().enableOsLive()).toBe(true);
     expect(useShellStore.getState().osMode).toBe("live");
+  });
+
+  it("enableOsLive refuses when gym missing even if armed flag is set", () => {
+    useShellStore.setState({
+      armed: true,
+      profile: { ...DEFAULT_PROFILE },
+    });
+    expect(useShellStore.getState().enableOsLive()).toBe(false);
+    expect(useShellStore.getState().osMode).not.toBe("live");
+  });
+
+  it("drift auto-HOLD after 60s of bad confidence while armed", () => {
+    expect(useShellStore.getState().arm()).toBe(true);
+    const t0 = Date.now();
+    useShellStore.setState({
+      confidenceSamples: [{ t: t0, c: 0.1 }],
+      driftBadSince: t0 - 60_001,
+    });
+    useShellStore.getState().evaluateDrift(t0);
+    expect(useShellStore.getState().driftNudge).toBe(true);
+    expect(useShellStore.getState().hold).toBe(true);
+    expect(useShellStore.getState().osMode).not.toBe("live");
+  });
+
+  it("dry-run preview names the click mapping", () => {
+    useShellStore.getState().completeGym({
+      missRate: 0.1,
+      remap: { from: "confirm", to: "switch", reason: "test" },
+    });
+    useShellStore.getState().setOsMode("dry-run");
+    useShellStore.getState().applyIntent({
+      type: "switch_binary",
+      index: 0,
+      active: true,
+      t: Date.now(),
+    });
+    const text = useShellStore.getState().osPreview.map((l) => l.text).join("\n");
+    expect(text).toMatch(/CLICK/);
+    expect(text).toMatch(/switch/);
   });
 });

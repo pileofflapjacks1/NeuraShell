@@ -38,7 +38,8 @@ describe("profile schema", () => {
     const back = importProfileJson(json);
     expect(back.name).toBe("Demo");
     expect(back.dwellMs).toBe(700);
-    expect(back.version).toBe("0.2.0");
+    expect(back.version).toBe("0.3.0");
+    expect(back.mappings.click).toBe("confirm");
   });
 
   it("migrates 0.1.0 profiles without calibratedAt", () => {
@@ -53,7 +54,27 @@ describe("profile schema", () => {
       switchCount: 3,
       updatedAt: new Date().toISOString(),
     } as Partial<typeof DEFAULT_PROFILE>);
-    expect(p.version).toBe("0.2.0");
+    expect(p.version).toBe("0.3.0");
     expect(p.calibratedAt).toBeNull();
+    expect(p.mappings.click).toBe("confirm");
+    expect(p.lastGymAt).toBeUndefined();
+  });
+
+  it("migrates 0.2.0 profiles with default mappings and no gym stamp", () => {
+    const p = sanitizeProfile({
+      version: "0.2.0",
+      name: "Mid",
+      defaultMode: "point",
+      dwellMs: 600,
+      confidenceThreshold: 0.65,
+      safeMode: true,
+      switchTimingMs: 900,
+      switchCount: 4,
+      calibratedAt: "2026-07-21T00:00:00.000Z",
+      updatedAt: new Date().toISOString(),
+    } as Partial<typeof DEFAULT_PROFILE>);
+    expect(p.version).toBe("0.3.0");
+    expect(p.mappings).toEqual({ click: "confirm", confirm: "confirm", stop: "key" });
+    expect(p.lastGymAt).toBeUndefined();
   });
 });

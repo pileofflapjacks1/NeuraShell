@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useShellStore } from "@/lib/store";
+import { readinessInputFromState, useShellStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { ConnectionState } from "@/lib/intents/types";
-import { computeReadiness, meanConfidence } from "@/lib/readiness";
+import { computeReadiness } from "@/lib/readiness";
+import { gymIsFresh } from "@/lib/gym";
+import { GESTURE_HINTS } from "@/lib/intents/mapping";
 
 const LABELS: Record<ConnectionState, string> = {
   disconnected: "Disconnected",
@@ -47,33 +49,44 @@ export function SessionReady({
   const lastIntentAt = useShellStore((s) => s.lastIntentAt);
   const replaying = useShellStore((s) => s.replaying);
   const recording = useShellStore((s) => s.recording);
+  const driftNudge = useShellStore((s) => s.driftNudge);
+  const evaluateDrift = useShellStore((s) => s.evaluateDrift);
 
   const active = connection !== "disconnected";
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    const id = window.setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      evaluateDrift(t);
+    }, 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [evaluateDrift]);
 
   const readiness = useMemo(() => {
-    return computeReadiness({
-      connected: active,
-      calibrated: Boolean(profile.calibratedAt),
-      frozen: hold || frozen,
-      armed,
-      safeMode,
-      msSinceIntent: lastIntentAt == null ? null : now - lastIntentAt,
-      confidence,
-      confidenceMean: meanConfidence(confidenceSamples, 2500, now),
-      confidenceThreshold: profile.confidenceThreshold,
-      replaying,
-      recording,
-    });
+    return computeReadiness(
+      readinessInputFromState(
+        {
+          connection,
+          hold,
+          frozen,
+          armed,
+          safeMode,
+          lastIntentAt,
+          confidence,
+          confidenceSamples,
+          profile,
+          replaying,
+          recording,
+          driftNudge,
+        },
+        now
+      ),
+      now
+    );
   }, [
-    active,
-    profile.calibratedAt,
-    profile.confidenceThreshold,
+    connection,
     hold,
     frozen,
     armed,
@@ -81,10 +94,15 @@ export function SessionReady({
     lastIntentAt,
     confidence,
     confidenceSamples,
+    profile,
     replaying,
     recording,
+    driftNudge,
     now,
   ]);
+
+  const gymOk = gymIsFresh(profile.lastGymAt, profile.lastGymMissRate, now);
+  const gymBlocked = !readiness.canArm && !gymOk;
 
   const levelColor =
     readiness.level === "ready"
@@ -164,6 +182,26 @@ export function SessionReady({
         <p className="mt-2 text-sm text-shell-fg/90" role="status">
           {readiness.summary}
         </p>
+        {profile.gymRemap && (
+          <p className="mt-2 text-sm text-cyan-200">
+            Gym remapped click → {profile.gymRemap.to} ({GESTURE_HINTS[profile.gymRemap.to]})
+          </p>
+        )}
+        {driftNudge && (
+          <p className="mt-2 text-sm text-amber-200">
+            Drift detected — run gym. Mapping was not changed.
+          </p>
+        )}
+        {gymBlocked && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/gym" className="shell-btn shell-btn-primary min-h-11 px-4 no-underline text-sm">
+              Run gym
+            </Link>
+            <Link href="/calibrate" className="shell-btn shell-btn-secondary min-h-11 px-4 no-underline text-sm">
+              Calibrate
+            </Link>
+          </div>
+        )}
         <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
           {readiness.factors.map((f) => (
             <li
@@ -236,7 +274,9 @@ export function SessionReady({
             title={
               readiness.canArm
                 ? "Enable intent actuation"
-                : "Improve readiness factors first"
+                : gymBlocked
+                  ? "Gym required before ARM"
+                  : "Required factors must pass — score does not bypass"
             }
           >
             ARM
@@ -254,6 +294,11 @@ export function SessionReady({
           </button>
         )}
 
+        {(driftNudge || !gymOk) && (
+          <Link href="/gym" className="shell-btn shell-btn-ghost min-h-12 px-4 no-underline">
+            Run gym
+          </Link>
+        )}
         {!profile.calibratedAt && (
           <Link
             href="/calibrate"

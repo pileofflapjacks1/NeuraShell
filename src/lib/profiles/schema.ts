@@ -1,4 +1,13 @@
-import type { ShellMode } from "@/lib/intents/types";
+import {
+  isGestureId,
+  type GestureId,
+  type ShellMode,
+} from "@/lib/intents/types";
+import {
+  DEFAULT_MAPPINGS,
+  sanitizeMappings,
+  type ActionMappings,
+} from "@/lib/intents/mapping";
 
 /**
  * Local profile shape — Neurabridge-friendly field names documented below.
@@ -10,9 +19,10 @@ import type { ShellMode } from "@/lib/intents/types";
  * - defaultMode → session mode after connect
  * - safeMode → raise confirm thresholds / larger targets
  * - calibratedAt → last successful calibration wizard finish (ISO)
+ * - mappings / lastGymAt → gym slice remaps one action (click) onto a wizard gesture
  */
 export interface ShellProfile {
-  version: "0.1.0" | "0.2.0";
+  version: "0.1.0" | "0.2.0" | "0.3.0";
   name: string;
   defaultMode: ShellMode;
   dwellMs: number;
@@ -22,10 +32,14 @@ export interface ShellProfile {
   switchCount: 2 | 3 | 4;
   calibratedAt: string | null;
   updatedAt: string;
+  mappings: ActionMappings;
+  lastGymAt?: number;
+  lastGymMissRate?: number;
+  gymRemap?: { from: GestureId; to: GestureId; reason: string };
 }
 
 export const DEFAULT_PROFILE: ShellProfile = {
-  version: "0.2.0",
+  version: "0.3.0",
   name: "Default",
   defaultMode: "idle",
   dwellMs: 600,
@@ -35,12 +49,13 @@ export const DEFAULT_PROFILE: ShellProfile = {
   switchCount: 4,
   calibratedAt: null,
   updatedAt: new Date(0).toISOString(),
+  mappings: { ...DEFAULT_MAPPINGS },
 };
 
 export function isShellProfile(value: unknown): value is ShellProfile {
   if (!value || typeof value !== "object") return false;
   const p = value as Record<string, unknown>;
-  const versionOk = p.version === "0.1.0" || p.version === "0.2.0";
+  const versionOk = p.version === "0.1.0" || p.version === "0.2.0" || p.version === "0.3.0";
   return (
     versionOk &&
     typeof p.name === "string" &&
@@ -68,8 +83,17 @@ export function sanitizeProfile(raw: Partial<ShellProfile> & { name?: string }):
         ? raw.calibratedAt
         : DEFAULT_PROFILE.calibratedAt;
 
+  const lastGymAt =
+    typeof raw.lastGymAt === "number" && Number.isFinite(raw.lastGymAt) && raw.lastGymAt > 0
+      ? raw.lastGymAt
+      : undefined;
+  const lastGymMissRate =
+    typeof raw.lastGymMissRate === "number" && Number.isFinite(raw.lastGymMissRate)
+      ? clamp(raw.lastGymMissRate, 0, 1)
+      : undefined;
+
   return {
-    version: "0.2.0",
+    version: "0.3.0",
     name: (raw.name ?? DEFAULT_PROFILE.name).slice(0, 64),
     defaultMode,
     dwellMs: clamp(Number(raw.dwellMs ?? DEFAULT_PROFILE.dwellMs), 100, 5000),
@@ -87,6 +111,23 @@ export function sanitizeProfile(raw: Partial<ShellProfile> & { name?: string }):
     switchCount,
     calibratedAt,
     updatedAt: new Date().toISOString(),
+    mappings: sanitizeMappings(raw.mappings),
+    lastGymAt,
+    lastGymMissRate,
+    gymRemap: sanitizeGymRemap(raw.gymRemap),
+  };
+}
+
+function sanitizeGymRemap(
+  raw: ShellProfile["gymRemap"] | unknown
+): ShellProfile["gymRemap"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Record<string, unknown>;
+  if (!isGestureId(r.from) || !isGestureId(r.to)) return undefined;
+  return {
+    from: r.from,
+    to: r.to,
+    reason: String(r.reason ?? "gym").slice(0, 160),
   };
 }
 
