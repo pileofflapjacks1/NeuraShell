@@ -39,12 +39,9 @@ import {
   connectionStatusMessage,
   type BridgeHealth,
 } from "@/lib/bridge/health";
+import { withUndoTimestamps, type UndoAction } from "@/lib/undo-timeline";
 
-export type UndoAction =
-  | { kind: "mode"; from: ShellMode; to: ShellMode }
-  | { kind: "type_char"; char: string }
-  | { kind: "click_target"; targetId: string | null; prevId: string | null }
-  | { kind: "safe_mode"; from: boolean; to: boolean };
+export type { UndoAction };
 
 /** Why actuation is frozen — drives freeze UI copy. */
 export type FreezeReason = "stop" | "hold" | null;
@@ -959,7 +956,7 @@ function pushUndo(
   get: () => ShellState,
   action: UndoAction
 ) {
-  const undoStack = [...get().undoStack, action].slice(-MAX_UNDO);
+  const undoStack = withUndoTimestamps([...get().undoStack, action]).slice(-MAX_UNDO);
   set({ undoStack });
 }
 

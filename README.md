@@ -1,6 +1,6 @@
 # NeuraShell
 
-**0.5.1** — computer-side **control plane** for high-bandwidth *intent* users.
+**0.6.0** — computer-side **control plane** for high-bandwidth *intent* users.
 
 Simulator-first. **Not** implant software. **Not** a Neuralink product. **Not** a medical device.
 
@@ -48,7 +48,7 @@ pnpm build
 
 No accounts. No env secrets for the demo.
 
-## What ships (0.5.1)
+## What ships (0.6.0)
 
 | Area | Behavior |
 |------|----------|
@@ -56,7 +56,7 @@ No accounts. No env secrets for the demo.
 | **Gym** | `/gym` slice (180s default / 720s cap). Remap click on accept. Stale gym (>7d) or miss >35% blocks ARM. |
 | **ARM gate** | Intent actuation only when ARMED; `arm()` no-ops if `!canArm`; STOP disarms |
 | **Modes** | `point` · `click` · `type` · `switch` · `idle` |
-| **Panic + freeze** | STOP · UNDO · HOLD; freeze overlay |
+| **Panic + freeze** | STOP · UNDO · HOLD; undo timeline (newest first, one pop, no redo); freeze overlay |
 | **Calibration** | `/calibrate` → local profile |
 | **Record / Replay** | Local JSON capture + timeline replay |
 | **Actuate OS** | Dry-run preview (shows mapping); live = ARM + Safe confirm + gym mapping |

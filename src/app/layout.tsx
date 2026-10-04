@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "Neura Suite",
   ],
   openGraph: {
-    title: "NeuraShell — 0.5",
+    title: "NeuraShell — 0.6.0",
     description:
       "Computer-side control plane: readiness, ARM, panic, calibrate, record/replay, OS dry-run. Not implant software.",
     type: "website",

@@ -56,7 +56,8 @@ export default function A11yPage() {
       id: "panic-sticky",
       label: "Panic bar always reachable",
       pass: true,
-      detail: "Sticky top bar above freeze overlay; STOP / UNDO / HOLD ≥ ~48px hit targets.",
+      detail:
+        "Sticky top bar above freeze overlay; STOP / UNDO / HOLD ≥ ~48px hit targets. Undo timeline is newest first; only that row undoes one step.",
     },
     {
       id: "freeze-ui",

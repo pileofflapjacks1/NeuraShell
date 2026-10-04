@@ -1,7 +1,27 @@
 # Ship — NeuraShell
 
-**Current:** 0.5.1 Bridge health · 2026-10-04  
-**Previous:** 0.5.0 gym + hard ARM gate · 2026-09-03  
+**Current:** 0.6.0 undo timeline · 2026-10-04  
+**Previous:** 0.5.1 Bridge health · 2026-10-04  
+
+## 0.6.0
+
+- [x] `pnpm test` green
+- [x] `pnpm build` green
+- [x] `CHANGELOG.md` 0.6.0
+- [x] `package.json`, `LISTING.md`, `neurabeach-manifest.json` at 0.6.0
+- [x] Beach catalog part + override copy at 0.6.0
+- [x] Undo timeline: newest first, one pop, empty copy, STOP/HOLD stay reachable
+- [x] ARM, OS live, and Bridge link changes stay off the undo stack
+- [x] Bridge health unchanged (connecting / open / lost, backoff, HOLD + dry-run on loss while armed)
+
+Tag when you want it:
+
+```bash
+git tag -a v0.6.0 -m "NeuraShell 0.6.0 undo timeline"
+git push origin v0.6.0
+```
+
+---
 
 ## 0.5.1
 
@@ -63,10 +83,10 @@ git push origin v0.5.1
 
 | Artifact | Version |
 |----------|---------|
-| `package.json` | `0.5.1` |
-| `neurabeach-manifest.json` | `0.5.1` |
-| `LISTING.md` | `0.5.1` |
-| Beach catalog part | `0.5.1` |
+| `package.json` | `0.6.0` |
+| `neurabeach-manifest.json` | `0.6.0` |
+| `LISTING.md` | `0.6.0` |
+| Beach catalog part | `0.6.0` |
 | Beach seed (catalog) | keep in sync on Beach deploys |
 
 **Do not bump** for cosmetic docs-only fixes unless you re-list on Beach.
@@ -87,4 +107,5 @@ git push origin v0.5.0
 - Real product stills / short Loom of `/demo` (optional)  
 - Custom domain (optional)  
 - Bridge health shipped in 0.5.1
-- Next features only when feedback demands them (undo timeline, harder OS path)
+- Undo timeline shipped in 0.6.0
+- Next features only when feedback demands them (harder OS path, PWA, custom domain)

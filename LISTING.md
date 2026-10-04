@@ -6,7 +6,7 @@
 |-------|--------|
 | **Slug** | `neurashell` |
 | **Title** | NeuraShell |
-| **Version** | `0.5.1` |
+| **Version** | `0.6.0` |
 | **Category** | `accessibility` |
 | **Featured** | yes |
 | **Collection** | `col-neura-suite` |
@@ -31,7 +31,7 @@
 
 ## Short description (catalog card)
 
-> Daily-driver computer-side control plane: gym slice, hard ARM gate, freeze UI, calibration, record/replay, Actuate OS dry-run, and optional Bridge health. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.
+> Daily-driver computer-side control plane: gym slice, hard ARM gate, undo timeline, freeze UI, calibration, record/replay, Actuate OS dry-run, and optional Bridge health. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.
 
 ---
 

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useShellStore } from "./store";
 import { DEFAULT_PROFILE, sanitizeProfile } from "./profiles/schema";
 import { DEFAULT_MAPPINGS } from "./intents/mapping";
+import { undoTimeline } from "./undo-timeline";
 
 function gymProfile() {
   return sanitizeProfile({
@@ -93,6 +94,49 @@ describe("shell store panic + modes", () => {
     useShellStore.getState().panicStop();
     useShellStore.getState().undo();
     expect(useShellStore.getState().mode).toBe("point");
+  });
+
+  it("an empty undo stack does not change mode", () => {
+    expect(useShellStore.getState().undoStack).toHaveLength(0);
+    useShellStore.getState().undo();
+    expect(useShellStore.getState().mode).toBe("point");
+    expect(useShellStore.getState().undoStack).toHaveLength(0);
+    expect(useShellStore.getState().statusMessage).toBe("Nothing to undo.");
+  });
+
+  it("one undo restores the previous mode", () => {
+    useShellStore.getState().setModeImmediate("click");
+    useShellStore.getState().setModeImmediate("type");
+    useShellStore.getState().undo();
+    expect(useShellStore.getState().mode).toBe("click");
+    expect(useShellStore.getState().undoStack).toHaveLength(1);
+  });
+
+  it("the timeline lists the newest entry first", () => {
+    useShellStore.getState().setModeImmediate("click");
+    useShellStore.getState().appendTyped("a");
+    const rows = undoTimeline(useShellStore.getState().undoStack);
+    expect(rows.map((row) => row.label)).toEqual([
+      "Typed “a”",
+      "Switched mode from point to click",
+    ]);
+    expect(rows[0]?.newest).toBe(true);
+    expect(rows[1]?.newest).toBe(false);
+    expect(rows.every((row) => typeof row.at === "number")).toBe(true);
+  });
+
+  it("does not record ARM, OS live, or Bridge link changes", () => {
+    expect(useShellStore.getState().arm()).toBe(true);
+    expect(useShellStore.getState().enableOsLive()).toBe(true);
+    useShellStore.getState().noteBridgeHealth({
+      state: "lost",
+      lastMessageAt: 1_700_000_000_000,
+    });
+    const s = useShellStore.getState();
+    expect(s.undoStack).toEqual([]);
+    expect(s.hold).toBe(true);
+    expect(s.osMode).toBe("dry-run");
+    expect(s.connection).toBe("bridge-lost");
   });
 
   it("Safe mode requires confirm for mode change", () => {

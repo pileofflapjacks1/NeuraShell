@@ -1,13 +1,13 @@
 # What NeuraShell is (and is not)
 
 One-page suite copy for Beach, demos, and collaborators.  
-**Version:** 0.5.1 · **Role:** `suite_role: app` (control shell)
+**Version:** 0.6.0 · **Role:** `suite_role: app` (control shell)
 
 ---
 
 ## One-liner
 
-> Daily-driver **computer-side control plane** for high-bandwidth intent users: gym slice, hard ARM gate, modes, panic stop/undo, calibration, profiles, record/replay, Actuate OS dry-run. Simulator-first.
+> Daily-driver **computer-side control plane** for high-bandwidth intent users: gym slice, hard ARM gate, modes, panic stop/undo timeline, calibration, profiles, record/replay, Actuate OS dry-run. Simulator-first.
 
 ---
 
@@ -68,10 +68,10 @@ No accounts. No env secrets for the demo.
 
 ---
 
-## Scope lock (0.5.1)
+## Scope lock (0.6.0)
 
-**In:** gym slice + remap-on-accept, hard ARM gate (no score bypass), freeze, calibrate, profiles v0.3 mappings, record/replay, OS dry-run (live = ARM + Safe + gym mapping), soft Bridge health (connecting / open / lost; loss while armed HOLDs and drops live OS), Beach listing.  
-**Out (for later):** undo timeline UI, PWA, custom domain, hard Bridge package, full desktop driver in-browser.
+**In:** gym slice + remap-on-accept, hard ARM gate (no score bypass), freeze, calibrate, profiles v0.3 mappings, record/replay, OS dry-run (live = ARM + Safe + gym mapping), undo timeline (newest first, one pop, no redo), soft Bridge health (connecting / open / lost; loss while armed HOLDs and drops live OS), Beach listing.  
+**Out (for later):** PWA, custom domain, hard Bridge package, full desktop driver in-browser.
 
 ---
 

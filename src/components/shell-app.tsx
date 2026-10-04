@@ -47,7 +47,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
               Control plane
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-shell-muted sm:text-base">
-              Gym + hard ARM gate · freeze · calibration · record/replay · Actuate OS dry-run.
+              Gym + hard ARM gate · undo timeline · freeze · calibration · record/replay · Actuate OS dry-run.
               Simulator-first.
             </p>
           </div>
@@ -132,7 +132,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
       </main>
 
       <footer className="border-t border-shell-border py-4 text-center text-xs text-shell-muted">
-        NeuraShell v0.5.1 · suite_role: app · computer_side · MIT ·{" "}
+        NeuraShell v0.6.0 · suite_role: app · computer_side · MIT ·{" "}
         <a href="https://neurabeach.com" className="text-cyan-400 underline-offset-2 hover:underline">
           NeuraBeach
         </a>
@@ -155,7 +155,7 @@ function KeyboardCheatsheet() {
           <kbd className="kbd">Enter</kbd> confirm · <kbd className="kbd">Space</kbd> safe confirm
         </li>
         <li>
-          <kbd className="kbd">Esc</kbd> STOP · <kbd className="kbd">⌘Z</kbd> UNDO
+          <kbd className="kbd">Esc</kbd> STOP · <kbd className="kbd">⌘Z</kbd> UNDO (newest row)
         </li>
         <li>
           <kbd className="kbd">1</kbd>–<kbd className="kbd">4</kbd> switch ·{" "}

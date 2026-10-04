@@ -3,6 +3,19 @@
 All notable changes to **NeuraShell** are documented here.  
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)-inspired. Versioning: semver.
 
+## [0.6.0] — 2026-10-04 — Undo timeline
+
+### Added
+- The panic bar lists the undo stack newest first. Each row has a plain-language label (mode, typed character, click target, or safe mode) and a time. Entries that arrive without a time get one.
+- UNDO, ⌘Z / Ctrl+Z, and the newest row each pop one entry through the existing undo path. Older rows are not a shortcut. There is no redo.
+- An empty stack says there is nothing to undo. STOP and HOLD stay on the bar.
+
+### Safety
+- ARM, OS live, and Bridge link changes are not undo entries. Dry-run stays the default.
+- Bridge health is unchanged: connecting / open / lost, backoff reconnect, and HOLD plus OS live to dry-run when the socket drops while armed.
+
+---
+
 ## [0.5.1] — 2026-10-04 — Bridge health
 
 ### Fixed
