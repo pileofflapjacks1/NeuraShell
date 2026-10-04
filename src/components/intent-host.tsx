@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useRef } from "react";
 import { createKeyboardAdapter, createSyntheticAdapter } from "@/lib/intents";
 import { createBridgeRemoteAdapter } from "@/lib/bridge/client";
+import { useShellStore } from "@/lib/store";
 import { createReplayAdapter } from "@/lib/intents/recording";
 import type { IntentRecording } from "@/lib/intents/recording";
-import { useShellStore } from "@/lib/store";
 import type { IntentAdapter } from "@/lib/intents/types";
 
 /**
@@ -65,11 +65,15 @@ export function IntentHost({
     synthRef.current?.stop();
     synthRef.current = null;
     bridgeRef.current?.stop();
-    const adapter = createBridgeRemoteAdapter();
+    const adapter = createBridgeRemoteAdapter({
+      onHealth: (health) => {
+        useShellStore.getState().noteBridgeHealth(health);
+      },
+    });
     bridgeRef.current = adapter;
+    // Badge stays "Bridge connecting" until the socket's onopen.
     adapter.start(applyIntent);
-    setConnection("bridge-remote");
-  }, [applyIntent, setConnection, stopReplay]);
+  }, [applyIntent, stopReplay]);
 
   const startReplay = useCallback(
     (rec: IntentRecording) => {

@@ -6,12 +6,12 @@
 |-------|--------|
 | **Slug** | `neurashell` |
 | **Title** | NeuraShell |
-| **Version** | `0.5.0` |
+| **Version** | `0.5.1` |
 | **Category** | `accessibility` |
 | **Featured** | yes |
 | **Collection** | `col-neura-suite` |
 | **Suite role** | `app` (control shell) |
-| **Depends on** | `[]` (optional soft Neurabridge later) |
+| **Depends on** | `[]` (optional soft Bridge: local WebSocket or BroadcastChannel, no package) |
 | **License** | MIT |
 | **GitHub** | https://github.com/pileofflapjacks1/NeuraShell |
 | **Live demo** | https://neurashell-eta.vercel.app/demo |
@@ -31,7 +31,7 @@
 
 ## Short description (catalog card)
 
-> Daily-driver computer-side control plane: readiness, ARM gate, freeze UI, calibration, record/replay, Actuate OS dry-run (optional live local POST to Intent→OS-style endpoint). Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.
+> Daily-driver computer-side control plane: gym slice, hard ARM gate, freeze UI, calibration, record/replay, Actuate OS dry-run, and optional Bridge health. Simulator-first. Not implant software. Not a medical device. Not affiliated with Neuralink.
 
 ---
 

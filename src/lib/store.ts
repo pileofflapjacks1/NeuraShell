@@ -34,6 +34,11 @@ import {
   type GymRemap,
 } from "@/lib/gym";
 import { intentMatchesAction } from "@/lib/intents/mapping";
+import {
+  connectionForBridgeLink,
+  connectionStatusMessage,
+  type BridgeHealth,
+} from "@/lib/bridge/health";
 
 export type UndoAction =
   | { kind: "mode"; from: ShellMode; to: ShellMode }
@@ -46,6 +51,8 @@ export type FreezeReason = "stop" | "hold" | null;
 
 export interface ShellState {
   connection: ConnectionState;
+  /** Last Bridge WS / channel frame. Null outside a bridge link or before any frame. */
+  bridgeLastMessageAt: number | null;
   mode: ShellMode;
   safeMode: boolean;
   hold: boolean;
@@ -98,6 +105,8 @@ export interface ShellState {
   // Actions
   hydrate: () => void;
   setConnection: (c: ConnectionState) => void;
+  /** Apply soft-Bridge link health. Lost while armed HOLDs and drops OS live to dry-run. */
+  noteBridgeHealth: (health: BridgeHealth) => void;
   setConfidence: (n: number) => void;
   setStatus: (msg: string) => void;
   setSafeMode: (on: boolean) => void;
@@ -145,6 +154,7 @@ let lastOsPreviewMs = 0;
 
 export const useShellStore = create<ShellState>((set, get) => ({
   connection: "disconnected",
+  bridgeLastMessageAt: null,
   mode: "idle",
   safeMode: true,
   hold: false,
@@ -198,20 +208,75 @@ export const useShellStore = create<ShellState>((set, get) => ({
 
   setConnection: (connection) => {
     const was = get().connection;
+    const keepAge =
+      connection === "bridge-connecting" ||
+      connection === "bridge-remote" ||
+      connection === "bridge-lost";
     set({
       connection,
-      statusMessage:
-        connection === "disconnected"
-          ? "Disconnected."
-          : connection === "synthetic"
-            ? "Synthetic session active — check readiness, then ARM."
-            : connection === "bridge-sim"
-              ? "Bridge simulator connected."
-              : "Bridge remote (local WS / channel).",
+      bridgeLastMessageAt: keepAge ? get().bridgeLastMessageAt : null,
+      statusMessage: connectionStatusMessage(connection),
     });
     if (connection === "disconnected" && was !== "disconnected") {
       set({ armed: false });
     }
+  },
+
+  noteBridgeHealth: (health) => {
+    const state = get();
+    const target = connectionForBridgeLink(health.state);
+    const nextAt = health.lastMessageAt;
+
+    if (state.connection === target) {
+      const prevAt = state.bridgeLastMessageAt;
+      if (nextAt == null) {
+        if (prevAt != null) set({ bridgeLastMessageAt: null });
+        return;
+      }
+      if (prevAt != null && nextAt - prevAt < 250) return;
+      if (nextAt !== prevAt) set({ bridgeLastMessageAt: nextAt });
+      return;
+    }
+
+    if (health.state === "connecting" || health.state === "open") {
+      const held = state.hold || state.frozen;
+      set({
+        connection: target,
+        bridgeLastMessageAt: nextAt,
+        statusMessage:
+          health.state === "connecting"
+            ? connectionStatusMessage("bridge-connecting")
+            : held
+              ? "Bridge remote open. HOLD still active — RELEASE before actuation."
+              : connectionStatusMessage("bridge-remote"),
+      });
+      return;
+    }
+
+    const wasLive = state.osMode === "live";
+    const wasArmed = state.armed;
+    if (wasLive) {
+      set({ osMode: "dry-run" });
+      get().pushOsPreview({
+        at: Date.now(),
+        kind: "info",
+        text: "Bridge lost — live OS posts halted (now dry-run)",
+      });
+    }
+    if (wasArmed) {
+      get().panicHold();
+    }
+    set({
+      connection: "bridge-lost",
+      bridgeLastMessageAt: nextAt,
+      statusMessage: wasArmed
+        ? wasLive
+          ? "Bridge lost — HOLD. OS live dropped to dry-run. Keyboard fallback. Reconnecting."
+          : "Bridge lost — HOLD. Keyboard fallback. Reconnecting."
+        : wasLive
+          ? "Bridge lost — OS live dropped to dry-run. Keyboard fallback. Reconnecting."
+          : connectionStatusMessage("bridge-lost"),
+    });
   },
 
   setConfidence: (confidence) => set({ confidence: clamp01(confidence) }),
@@ -320,6 +385,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
 
   releaseHold: () => {
     const reason = get().freezeReason;
+    const lost = get().connection === "bridge-lost";
     set({
       hold: false,
       frozen: false,
@@ -328,7 +394,9 @@ export const useShellStore = create<ShellState>((set, get) => ({
       statusMessage:
         reason === "stop"
           ? "STOP released — still disarmed until you ARM (mode idle)."
-          : "Hold released — actuation depends on ARM state.",
+          : lost
+            ? "Hold released. Bridge still lost — keyboard fallback. Reconnecting."
+            : "Hold released — actuation depends on ARM state.",
     });
   },
 
@@ -773,6 +841,12 @@ export function readinessInputFromState(
     confidenceThreshold: s.profile.confidenceThreshold,
     replaying: s.replaying,
     recording: s.recording,
+    sessionNote:
+      s.connection === "bridge-lost"
+        ? "Bridge lost — keyboard fallback. Remote socket is down."
+        : s.connection === "bridge-connecting"
+          ? "Bridge connecting. Keyboard still works."
+          : undefined,
     lastGymAt: s.profile.lastGymAt ?? null,
     lastGymMissRate: s.profile.lastGymMissRate ?? null,
     driftNudge: s.driftNudge,

@@ -1,3 +1,25 @@
+# Ship — NeuraShell
+
+**Current:** 0.5.1 Bridge health · 2026-10-04  
+**Previous:** 0.5.0 gym + hard ARM gate · 2026-09-03  
+
+## 0.5.1
+
+- [x] `pnpm test` green
+- [x] `pnpm build` green
+- [x] `CHANGELOG.md` 0.5.1
+- [x] `package.json`, `LISTING.md`, `neurabeach-manifest.json` at 0.5.1
+- [x] Beach catalog part moved off the stale 0.4.0 card
+
+Tag when you want it:
+
+```bash
+git tag -a v0.5.1 -m "NeuraShell 0.5.1 Bridge health"
+git push origin v0.5.1
+```
+
+---
+
 # Ship — NeuraShell 0.5.0
 
 **Status:** gym + hard ARM gate  
@@ -41,9 +63,10 @@
 
 | Artifact | Version |
 |----------|---------|
-| `package.json` | `0.5.0` |
-| `neurabeach-manifest.json` | `0.5.0` |
-| `LISTING.md` | `0.5.0` |
+| `package.json` | `0.5.1` |
+| `neurabeach-manifest.json` | `0.5.1` |
+| `LISTING.md` | `0.5.1` |
+| Beach catalog part | `0.5.1` |
 | Beach seed (catalog) | keep in sync on Beach deploys |
 
 **Do not bump** for cosmetic docs-only fixes unless you re-list on Beach.
@@ -63,4 +86,5 @@ git push origin v0.5.0
 
 - Real product stills / short Loom of `/demo` (optional)  
 - Custom domain (optional)  
-- Next features only when feedback demands them (undo timeline, Bridge health, harder OS path)
+- Bridge health shipped in 0.5.1
+- Next features only when feedback demands them (undo timeline, harder OS path)

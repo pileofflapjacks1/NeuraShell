@@ -16,6 +16,7 @@ function gymProfile() {
 function resetStore() {
   useShellStore.setState({
     connection: "synthetic",
+    bridgeLastMessageAt: null,
     mode: "point",
     safeMode: true,
     hold: false,

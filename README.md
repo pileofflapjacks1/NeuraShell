@@ -1,6 +1,6 @@
 # NeuraShell
 
-**0.5.0** — computer-side **control plane** for high-bandwidth *intent* users.
+**0.5.1** — computer-side **control plane** for high-bandwidth *intent* users.
 
 Simulator-first. **Not** implant software. **Not** a Neuralink product. **Not** a medical device.
 
@@ -48,7 +48,7 @@ pnpm build
 
 No accounts. No env secrets for the demo.
 
-## What ships (0.5)
+## What ships (0.5.1)
 
 | Area | Behavior |
 |------|----------|
@@ -60,6 +60,7 @@ No accounts. No env secrets for the demo.
 | **Calibration** | `/calibrate` → local profile |
 | **Record / Replay** | Local JSON capture + timeline replay |
 | **Actuate OS** | Dry-run preview (shows mapping); live = ARM + Safe confirm + gym mapping |
+| **Bridge health** | Optional soft WS. Badge is connecting / open / lost, with last message age. Loss while armed → HOLD and OS live → dry-run. Keyboard works with no Bridge. |
 | **Catalog** | Beach `col-neura-suite` · `LISTING.md` · manifest |
 
 ### Actuate OS (dry-run first)

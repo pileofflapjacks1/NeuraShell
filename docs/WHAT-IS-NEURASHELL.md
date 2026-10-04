@@ -1,7 +1,7 @@
 # What NeuraShell is (and is not)
 
 One-page suite copy for Beach, demos, and collaborators.  
-**Version:** 0.5.0 · **Role:** `suite_role: app` (control shell)
+**Version:** 0.5.1 · **Role:** `suite_role: app` (control shell)
 
 ---
 
@@ -68,9 +68,9 @@ No accounts. No env secrets for the demo.
 
 ---
 
-## Scope lock (0.5.0)
+## Scope lock (0.5.1)
 
-**In:** gym slice + remap-on-accept, hard ARM gate (no score bypass), freeze, calibrate, profiles v0.3 mappings, record/replay, OS dry-run (live = ARM + Safe + gym mapping), Beach listing.  
+**In:** gym slice + remap-on-accept, hard ARM gate (no score bypass), freeze, calibrate, profiles v0.3 mappings, record/replay, OS dry-run (live = ARM + Safe + gym mapping), soft Bridge health (connecting / open / lost; loss while armed HOLDs and drops live OS), Beach listing.  
 **Out (for later):** undo timeline UI, PWA, custom domain, hard Bridge package, full desktop driver in-browser.
 
 ---

@@ -8,19 +8,19 @@ import type { ConnectionState } from "@/lib/intents/types";
 import { computeReadiness } from "@/lib/readiness";
 import { gymIsFresh } from "@/lib/gym";
 import { GESTURE_HINTS } from "@/lib/intents/mapping";
-
-const LABELS: Record<ConnectionState, string> = {
-  disconnected: "Disconnected",
-  synthetic: "Synthetic",
-  "bridge-sim": "Bridge sim",
-  "bridge-remote": "Bridge remote",
-};
+import {
+  formatBridgeMessageAge,
+  isBridgeConnection,
+  SESSION_CONNECTION_LABEL,
+} from "@/lib/bridge/health";
 
 const DOT: Record<ConnectionState, string> = {
   disconnected: "bg-zinc-500",
   synthetic: "bg-emerald-400",
   "bridge-sim": "bg-sky-400",
+  "bridge-connecting": "bg-amber-400",
   "bridge-remote": "bg-violet-400",
+  "bridge-lost": "bg-rose-400",
 };
 
 export interface SessionReadyProps {
@@ -35,6 +35,8 @@ export function SessionReady({
   onTryBridge,
 }: SessionReadyProps) {
   const connection = useShellStore((s) => s.connection);
+  const bridgeLastMessageAt = useShellStore((s) => s.bridgeLastMessageAt);
+  const osMode = useShellStore((s) => s.osMode);
   const safeMode = useShellStore((s) => s.safeMode);
   const setSafeMode = useShellStore((s) => s.setSafeMode);
   const statusMessage = useShellStore((s) => s.statusMessage);
@@ -53,7 +55,9 @@ export function SessionReady({
   const evaluateDrift = useShellStore((s) => s.evaluateDrift);
 
   const active = connection !== "disconnected";
+  const bridgeLink = isBridgeConnection(connection);
   const [now, setNow] = useState(() => Date.now());
+  const bridgeAge = bridgeLink ? formatBridgeMessageAge(bridgeLastMessageAt, now) : null;
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -131,9 +135,26 @@ export function SessionReady({
           Session Ready
         </h2>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-full border border-shell-border bg-shell-bg px-3 py-1.5">
-            <span className={cn("h-2.5 w-2.5 rounded-full", DOT[connection])} aria-hidden />
-            <span className="text-sm font-medium text-shell-fg">{LABELS[connection]}</span>
+          <div
+            className="flex flex-wrap items-center gap-2 rounded-full border border-shell-border bg-shell-bg px-3 py-1.5"
+            data-connection={connection}
+          >
+            <span
+              className={cn(
+                "h-2.5 w-2.5 rounded-full",
+                DOT[connection],
+                connection === "bridge-connecting" && "animate-pulse"
+              )}
+              aria-hidden
+            />
+            <span className="text-sm font-medium text-shell-fg">
+              {SESSION_CONNECTION_LABEL[connection]}
+            </span>
+            {bridgeAge && (
+              <span className="text-xs text-shell-muted tabular-nums">
+                Last message: {bridgeAge}
+              </span>
+            )}
           </div>
           <div
             className={cn(
@@ -147,6 +168,19 @@ export function SessionReady({
           </div>
         </div>
       </div>
+
+      {connection === "bridge-connecting" && (
+        <p className="mb-3 text-sm text-amber-100">
+          Connecting to ws://127.0.0.1:7711. Keyboard still works.
+        </p>
+      )}
+      {connection === "bridge-lost" && (
+        <p className="mb-3 text-sm text-rose-100">
+          Bridge lost. Keyboard fallback. Reconnecting.
+          {hold ? " HOLD is on." : ""}
+          {osMode === "dry-run" ? " OS path is dry-run." : ""}
+        </p>
+      )}
 
       {/* Readiness score */}
       <div className="mb-4 rounded-xl border border-shell-border bg-shell-bg p-4">
@@ -288,9 +322,9 @@ export function SessionReady({
             type="button"
             onClick={onTryBridge}
             className="shell-btn shell-btn-ghost min-h-12 px-4"
-            title="Optional: ws://127.0.0.1:7711 or BroadcastChannel"
+            title="Optional soft path: ws://127.0.0.1:7711 or BroadcastChannel neurabridge-intent. Keyboard keeps working."
           >
-            Try Bridge remote
+            Try Bridge
           </button>
         )}
 

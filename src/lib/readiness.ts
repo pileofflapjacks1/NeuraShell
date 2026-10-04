@@ -22,6 +22,8 @@ export type ReadinessInput = {
   lastGymAt: number | null;
   lastGymMissRate: number | null;
   driftNudge?: boolean;
+  /** Overrides the intent-session factor detail (bridge connecting / lost). */
+  sessionNote?: string;
 };
 
 export type ReadinessFactor = {
@@ -75,11 +77,13 @@ export function computeReadiness(input: ReadinessInput, now = Date.now()): Readi
       pass: input.connected || input.replaying,
       required: true,
       weight: 30,
-      detail: input.replaying
-        ? "Replay active (counts as session)."
-        : input.connected
-          ? "Connected to synthetic / bridge / sim."
-          : "Start synthetic session or Bridge remote.",
+      detail: input.sessionNote
+        ? input.sessionNote
+        : input.replaying
+          ? "Replay active (counts as session)."
+          : input.connected
+            ? "Connected to synthetic / bridge / sim."
+            : "Start synthetic session or Bridge remote.",
     },
     {
       id: "not_frozen",

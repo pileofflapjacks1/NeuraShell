@@ -3,6 +3,18 @@
 All notable changes to **NeuraShell** are documented here.  
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)-inspired. Versioning: semver.
 
+## [0.5.1] — 2026-10-04 — Bridge health
+
+### Fixed
+- Try Bridge no longer marks the session "Bridge remote" before the socket opens. The badge is **connecting**, **open** ("Bridge remote"), or **lost**, and shows last message age.
+- WebSocket `onerror` / `onclose` reconnect with backoff (`500ms` … `8s`). On loss the status says so and the session falls back to the keyboard. Synthetic and keyboard still run with no Bridge process.
+- If the socket drops while armed, the shell **HOLDs** and drops OS live to dry-run — the same live-path cut STOP already uses. A dead stream does not keep actuating. Reconnect does not release HOLD or turn live back on.
+
+### Safety
+- Soft path only: `ws://127.0.0.1:7711` and BroadcastChannel `neurabridge-intent`. No Neurabridge package. Dry-run stays the default.
+
+---
+
 ## [0.5.0] — 2026-09-03 — Gym slice + hard ARM gate
 
 ### Added

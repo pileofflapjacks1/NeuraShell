@@ -132,7 +132,7 @@ export function ShellApp({ navActive = "/" }: { navActive?: string }) {
       </main>
 
       <footer className="border-t border-shell-border py-4 text-center text-xs text-shell-muted">
-        NeuraShell v0.5 · suite_role: app · computer_side · MIT ·{" "}
+        NeuraShell v0.5.1 · suite_role: app · computer_side · MIT ·{" "}
         <a href="https://neurabeach.com" className="text-cyan-400 underline-offset-2 hover:underline">
           NeuraBeach
         </a>

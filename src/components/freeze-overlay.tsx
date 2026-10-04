@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useShellStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { formatBridgeMessageAge } from "@/lib/bridge/health";
 
 /**
  * Full-viewport freeze UI (below panic bar).
@@ -15,6 +16,9 @@ export function FreezeOverlay() {
   const frozenAt = useShellStore((s) => s.frozenAt);
   const mode = useShellStore((s) => s.mode);
   const confidence = useShellStore((s) => s.confidence);
+  const connection = useShellStore((s) => s.connection);
+  const bridgeLastMessageAt = useShellStore((s) => s.bridgeLastMessageAt);
+  const osMode = useShellStore((s) => s.osMode);
   const releaseHold = useShellStore((s) => s.releaseHold);
   const active = hold || frozen;
 
@@ -51,10 +55,22 @@ export function FreezeOverlay() {
   if (!active) return null;
 
   const isStop = freezeReason === "stop" || (frozen && !hold);
-  const title = isStop ? "STOP — actuation frozen" : "HOLD — temporary freeze";
+  const bridgeLost = connection === "bridge-lost";
+  const title = isStop
+    ? "STOP — actuation frozen"
+    : bridgeLost
+      ? "HOLD — Bridge lost"
+      : "HOLD — temporary freeze";
   const why = isStop
     ? "Pending actions cancelled. Mode set to idle. No mode changes or actuation until you release."
-    : "Intent actuation is paused. Confidence still updates for monitoring. Release when ready.";
+    : bridgeLost
+      ? `Bridge socket closed. ${
+          osMode === "dry-run" ? "OS path is dry-run. " : ""
+        }Keyboard fallback when you release. Last message: ${formatBridgeMessageAge(
+          bridgeLastMessageAt,
+          Date.now()
+        )}.`
+      : "Intent actuation is paused. Confidence still updates for monitoring. Release when ready.";
 
   const mm = String(Math.floor(elapsedSec / 60)).padStart(2, "0");
   const ss = String(elapsedSec % 60).padStart(2, "0");

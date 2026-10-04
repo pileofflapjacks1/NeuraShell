@@ -5,15 +5,15 @@ You are working on **NeuraShell only** unless the user asks to edit another suit
 ## Product
 
 Computer-side **control plane** for high-bandwidth intent users.  
-**Shipped:** 0.5.0 — gym slice + hard ARM gate. See `SHIP.md`, `CHANGELOG.md`, `docs/WHAT-IS-NEURASHELL.md`.
+**Shipped:** 0.5.1 — Bridge health on the 0.5.0 gym + hard ARM gate. See `SHIP.md`, `CHANGELOG.md`, `docs/WHAT-IS-NEURASHELL.md`.
 
 Not implant software. Not medical. Not Neuralink-affiliated.  
 Not Binder (TCG). Not NFA (flow). Not Beach (catalog).
 
-## Boundaries (0.5.0)
+## Boundaries (0.5.1)
 
 - Simulator-first: synthetic + keyboard always work.
-- Optional Bridge: soft WS / BroadcastChannel only.
+- Optional Bridge: soft WS / BroadcastChannel only. Badge is connecting until `onopen`, then open, or lost. Loss while armed HOLDs and drops live OS to dry-run. Keyboard and synthetic work with no Bridge.
 - Intent vocab: `velocity_2d` | `class_label` | `switch_binary` | `synthetic`.
 - Gestures (wizard/gym): `dwell` | `key` | `switch` | `confirm`.
 - Outputs: `ui_only` + optional `os_mouse` (dry-run / local POST).

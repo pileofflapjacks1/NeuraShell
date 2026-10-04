@@ -13,7 +13,9 @@ export type ConnectionState =
   | "disconnected"
   | "synthetic"
   | "bridge-sim"
-  | "bridge-remote";
+  | "bridge-connecting"
+  | "bridge-remote"
+  | "bridge-lost";
 
 export type ShellMode = "point" | "click" | "type" | "switch" | "idle";
 
