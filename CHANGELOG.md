@@ -3,6 +3,26 @@
 All notable changes to **NeuraShell** are documented here.  
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)-inspired. Versioning: semver.
 
+## [Unreleased]
+
+### Fixed
+- Enter and Space on a focused button or link activate that control again. The keyboard sim no longer cancels them or stacks a confirm intent on top.
+- ⌘ / Ctrl / Alt chords pass through to the browser. Held Enter, K, and 1–4 no longer repeat.
+- Held arrow / WASD keys are dropped when the window loses focus, so velocity cannot stick.
+- Undoing a safe mode toggle updates the saved profile too.
+
+### Safety
+- Stopping the session drops OS live to dry-run. Re-ARM does not bring live back without a fresh confirm.
+- A stop intent lands while HOLD is active (keyboard, replay, or Bridge).
+- ARM needs a session that is delivering intents. Bridge connecting and Bridge lost no longer pass the "Intent session" factor.
+- UNDO will not undo a mode change while STOP or HOLD is active. Release first.
+- The shell and the OS path use one click threshold (Safe mode included). An accepted click is emitted at 0.85 or above, the Intent→OS default. A rejected click is not sent.
+- OS velocity is only sent in point and click modes. Dry-run also previews in idle.
+- STOP, HOLD, disarm, session stop, and Bridge loss send one zero sample when OS live was on, so a receiver stops moving.
+- The Actuate OS panel no longer shows a `stop ←` mapping that nothing reads.
+
+---
+
 ## [0.6.0] — 2026-10-04 — Undo timeline
 
 ### Added

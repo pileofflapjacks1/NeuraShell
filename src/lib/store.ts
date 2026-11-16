@@ -16,6 +16,7 @@ import {
 import {
   DEFAULT_OS_ENDPOINT,
   MAX_OS_PREVIEW,
+  OS_CLICK_MIN,
   type OsActuateMode,
   type OsPreviewLine,
 } from "@/lib/os-actuate/types";
@@ -215,7 +216,18 @@ export const useShellStore = create<ShellState>((set, get) => ({
       statusMessage: connectionStatusMessage(connection),
     });
     if (connection === "disconnected" && was !== "disconnected") {
-      set({ armed: false });
+      // Same contract as disarm(): a stopped session never leaves OS live behind,
+      // so the next ARM cannot resume live posts without a fresh Safe confirm.
+      const wasLive = get().osMode === "live";
+      set({ armed: false, osMode: wasLive ? "dry-run" : get().osMode });
+      if (wasLive) {
+        haltOsStream(get);
+        get().pushOsPreview({
+          at: Date.now(),
+          kind: "info",
+          text: "Session stopped — live OS posts halted (now dry-run)",
+        });
+      }
     }
   },
 
@@ -254,6 +266,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
     const wasArmed = state.armed;
     if (wasLive) {
       set({ osMode: "dry-run" });
+      haltOsStream(get);
       get().pushOsPreview({
         at: Date.now(),
         kind: "info",
@@ -363,6 +376,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
         "STOP — disarmed, frozen, mode → idle. OS live disabled. RELEASE then re-ARM to actuate.",
     });
     if (prevOs === "live") {
+      haltOsStream(get);
       get().pushOsPreview({
         at: Date.now(),
         kind: "info",
@@ -372,6 +386,8 @@ export const useShellStore = create<ShellState>((set, get) => ({
   },
 
   panicHold: () => {
+    // Live stays selected through HOLD, so tell the receiver to stop moving.
+    if (get().osMode === "live") haltOsStream(get);
     set({
       hold: true,
       freezeReason: "hold",
@@ -404,6 +420,12 @@ export const useShellStore = create<ShellState>((set, get) => ({
       set({ statusMessage: "Nothing to undo." });
       return;
     }
+    // STOP / HOLD pin the mode. Undoing a mode change would lift the shell out
+    // of idle while it is still frozen, so the entry stays put until RELEASE.
+    if (action.kind === "mode" && (get().hold || get().frozen)) {
+      set({ statusMessage: "HOLD/STOP active — release before undoing a mode change." });
+      return;
+    }
     set({ undoStack: stack });
     switch (action.kind) {
       case "mode":
@@ -423,9 +445,17 @@ export const useShellStore = create<ShellState>((set, get) => ({
           statusMessage: "Undo click highlight.",
         });
         break;
-      case "safe_mode":
-        set({ safeMode: action.from, statusMessage: `Undo safe mode → ${action.from}` });
+      case "safe_mode": {
+        // Keep the saved profile in step, the same way setSafeMode does.
+        const profile = sanitizeProfile({ ...get().profile, safeMode: action.from });
+        saveProfile(profile);
+        set({
+          safeMode: action.from,
+          profile,
+          statusMessage: `Undo safe mode → ${action.from}`,
+        });
         break;
+      }
     }
   },
 
@@ -450,6 +480,13 @@ export const useShellStore = create<ShellState>((set, get) => ({
       });
     };
 
+    // STOP outranks HOLD: a stop intent (keyboard, replay or Bridge) must land
+    // even while the shell is already held.
+    if (event.type === "synthetic" && event.name === "stop") {
+      get().panicStop();
+      return;
+    }
+
     if (state.hold || state.frozen) {
       if (event.type === "class_label") {
         pushSample(event.confidence, event.t);
@@ -468,11 +505,6 @@ export const useShellStore = create<ShellState>((set, get) => ({
       state.replaying;
 
     if (!openChannel && event.type !== "synthetic") {
-      return;
-    }
-
-    if (event.type === "synthetic" && event.name === "stop") {
-      get().panicStop();
       return;
     }
 
@@ -502,8 +534,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
       maybeEmitOs(get, event);
       if (!mayActuate) return;
 
-      const threshold = state.profile.confidenceThreshold * (state.safeMode ? 1.05 : 1);
-      if (event.confidence < threshold) return;
+      if (event.confidence < actuationThreshold(state)) return;
 
       if (state.pendingMode && intentMatchesAction(event, "confirm", state.profile.mappings)) {
         get().confirmPendingMode();
@@ -653,7 +684,9 @@ export const useShellStore = create<ShellState>((set, get) => ({
   },
 
   disarm: () => {
-    const osMode = get().osMode === "live" ? "dry-run" : get().osMode;
+    const wasLive = get().osMode === "live";
+    const osMode = wasLive ? "dry-run" : get().osMode;
+    if (wasLive) haltOsStream(get);
     set({
       armed: false,
       osMode,
@@ -828,7 +861,8 @@ export function readinessInputFromState(
   now = Date.now()
 ): ReadinessInput {
   return {
-    connected: s.connection !== "disconnected",
+    // A Bridge that is still connecting or has dropped is not a session.
+    connected: connectionIsLive(s.connection),
     frozen: s.hold || s.frozen,
     armed: s.armed,
     safeMode: s.safeMode,
@@ -848,6 +882,28 @@ export function readinessInputFromState(
     lastGymMissRate: s.profile.lastGymMissRate ?? null,
     driftNudge: s.driftNudge,
   };
+}
+
+/** True only for links that are actually delivering intents. */
+export function connectionIsLive(connection: ConnectionState): boolean {
+  return (
+    connection === "synthetic" ||
+    connection === "bridge-sim" ||
+    connection === "bridge-remote"
+  );
+}
+
+/** Safe-mode-adjusted confidence a class_label needs before it counts. */
+function actuationThreshold(s: Pick<ShellState, "profile" | "safeMode">): number {
+  return s.profile.confidenceThreshold * (s.safeMode ? 1.05 : 1);
+}
+
+/**
+ * Tell the local receiver to stop moving. A receiver that integrates velocity
+ * would otherwise coast on the last sample after STOP / HOLD / disarm.
+ */
+function haltOsStream(get: () => ShellState) {
+  void postOsSample(get().osEndpoint, { vx: 0, vy: 0, click: 0, t: Date.now() / 1000 });
 }
 
 /**
@@ -874,24 +930,25 @@ function maybeEmitOs(get: () => ShellState, event: IntentEvent) {
     if (!mayStream) return;
   }
 
-  // Prefer OS stream in point/click; still allow click events in other modes
-  if (
-    event.type === "velocity_2d" &&
-    state.mode !== "point" &&
-    state.mode !== "click" &&
-    state.mode !== "idle"
-  ) {
-    // still allow in idle for monitoring dry-run
+  // Velocity drives the OS pointer only where it drives the shell cursor
+  // (point / click). Dry-run also previews in idle, for monitoring.
+  if (event.type === "velocity_2d") {
+    const pointing = state.mode === "point" || state.mode === "click";
+    const previewIdle = state.osMode === "dry-run" && state.mode === "idle";
+    if (!pointing && !previewIdle) return;
   }
 
+  // Same threshold the shell uses, so both paths agree on what a click is.
   const sample = intentToOsSample(event, {
-    clickThreshold: state.profile.confidenceThreshold,
+    clickThreshold: actuationThreshold(state),
     mappings: state.profile.mappings,
   });
   if (!sample) return;
+  // A click gesture the shell rejected is not a sample worth sending.
+  if (event.type !== "velocity_2d" && sample.click < OS_CLICK_MIN) return;
 
   const now = Date.now();
-  const isClick = sample.click >= 0.85;
+  const isClick = sample.click >= OS_CLICK_MIN;
   const moving = Math.hypot(sample.vx, sample.vy) > 0.04;
   // Throttle preview lines for continuous velocity
   if (!isClick && moving && now - lastOsPreviewMs < 90) {

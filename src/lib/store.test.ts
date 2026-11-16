@@ -90,10 +90,111 @@ describe("shell store panic + modes", () => {
     expect(s.frozenAt).toBeNull();
   });
 
-  it("UNDO restores previous mode after STOP", () => {
+  it("UNDO restores previous mode after STOP, once released", () => {
     useShellStore.getState().panicStop();
+    useShellStore.getState().releaseHold();
     useShellStore.getState().undo();
     expect(useShellStore.getState().mode).toBe("point");
+    expect(useShellStore.getState().armed).toBe(false);
+  });
+
+  it("UNDO cannot lift the mode out of idle while STOP is still frozen", () => {
+    useShellStore.getState().panicStop();
+    useShellStore.getState().undo();
+    const s = useShellStore.getState();
+    expect(s.mode).toBe("idle");
+    expect(s.frozen).toBe(true);
+    expect(s.undoStack).toHaveLength(1);
+    expect(s.statusMessage).toMatch(/release/i);
+  });
+
+  it("UNDO still pops non-mode entries while held", () => {
+    useShellStore.getState().appendTyped("a");
+    useShellStore.getState().panicHold();
+    useShellStore.getState().undo();
+    expect(useShellStore.getState().typed).toBe("");
+  });
+
+  it("undoing a safe mode toggle keeps the profile in step", () => {
+    useShellStore.getState().setSafeMode(false);
+    useShellStore.getState().undo();
+    const s = useShellStore.getState();
+    expect(s.safeMode).toBe(true);
+    expect(s.profile.safeMode).toBe(true);
+  });
+
+  it("a stop intent lands while HOLD is active", () => {
+    useShellStore.getState().arm();
+    useShellStore.getState().panicHold();
+    useShellStore.getState().applyIntent({ type: "synthetic", name: "stop", t: Date.now() });
+    const s = useShellStore.getState();
+    expect(s.armed).toBe(false);
+    expect(s.frozen).toBe(true);
+    expect(s.freezeReason).toBe("stop");
+  });
+
+  it("stopping the session drops OS live, and re-ARM does not bring it back", () => {
+    expect(useShellStore.getState().arm()).toBe(true);
+    expect(useShellStore.getState().enableOsLive()).toBe(true);
+    useShellStore.getState().setConnection("disconnected");
+    expect(useShellStore.getState().armed).toBe(false);
+    expect(useShellStore.getState().osMode).toBe("dry-run");
+    useShellStore.getState().setConnection("synthetic");
+    expect(useShellStore.getState().arm()).toBe(true);
+    expect(useShellStore.getState().osMode).toBe("dry-run");
+  });
+
+  it("cannot ARM while the Bridge is connecting or lost", () => {
+    useShellStore.setState({ connection: "disconnected" });
+    useShellStore.getState().noteBridgeHealth({ state: "connecting", lastMessageAt: null });
+    expect(useShellStore.getState().arm()).toBe(false);
+    useShellStore.getState().noteBridgeHealth({ state: "lost", lastMessageAt: null });
+    expect(useShellStore.getState().arm()).toBe(false);
+    useShellStore.getState().noteBridgeHealth({ state: "open", lastMessageAt: null });
+    expect(useShellStore.getState().arm()).toBe(true);
+  });
+
+  it("a click the shell accepts is a click on the OS path too", () => {
+    useShellStore.getState().arm();
+    useShellStore.getState().setModeImmediate("click", false);
+    useShellStore.getState().setOsMode("dry-run");
+    useShellStore.getState().applyIntent({
+      type: "class_label",
+      label: "confirm",
+      confidence: 0.7,
+      t: Date.now(),
+    });
+    const s = useShellStore.getState();
+    expect(s.clickTargetId).not.toBeNull();
+    expect(s.osPreview[0]?.kind).toBe("click");
+  });
+
+  it("a click the shell rejects never reaches the OS path", () => {
+    useShellStore.getState().arm();
+    useShellStore.getState().setModeImmediate("click", false);
+    useShellStore.getState().setOsMode("dry-run");
+    const before = useShellStore.getState().osPreview.length;
+    // Above the raw 0.65 threshold, below the Safe-mode 0.6825 one.
+    useShellStore.getState().applyIntent({
+      type: "class_label",
+      label: "confirm",
+      confidence: 0.66,
+      t: Date.now(),
+    });
+    const s = useShellStore.getState();
+    expect(s.clickTargetId).toBeNull();
+    expect(s.osPreview).toHaveLength(before);
+  });
+
+  it("velocity stays off the OS path in type and switch modes", () => {
+    useShellStore.getState().arm();
+    useShellStore.getState().setOsMode("dry-run");
+    const before = useShellStore.getState().osPreview.length;
+    for (const mode of ["type", "switch"] as const) {
+      useShellStore.getState().setModeImmediate(mode, false);
+      useShellStore.getState().applyIntent({ type: "velocity_2d", vx: 1, vy: 0, t: Date.now() });
+    }
+    expect(useShellStore.getState().osPreview).toHaveLength(before);
   });
 
   it("an empty undo stack does not change mode", () => {

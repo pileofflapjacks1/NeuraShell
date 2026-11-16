@@ -20,7 +20,7 @@ export async function postOsSample(
   }
 
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(endpoint, {
@@ -31,13 +31,13 @@ export async function postOsSample(
       mode: "cors",
       keepalive: true,
     });
-    window.clearTimeout(timer);
+    clearTimeout(timer);
     if (!res.ok) {
       return { ok: false, status: res.status, error: `HTTP ${res.status}` };
     }
     return { ok: true, status: res.status };
   } catch (e) {
-    window.clearTimeout(timer);
+    clearTimeout(timer);
     const msg = e instanceof Error ? e.message : "post failed";
     // Common when relay is not running
     return { ok: false, error: msg.includes("abort") ? "timeout" : msg };
