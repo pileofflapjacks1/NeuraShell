@@ -89,7 +89,6 @@ export function ActuateOsPanel() {
       <p className="mb-3 rounded-lg border border-shell-border bg-shell-bg px-3 py-2 text-xs text-shell-fg/90">
         Mapping that would fire: <strong className="text-cyan-300">click ← {mappings.click}</strong>
         {" · "}confirm ← {mappings.confirm}
-        {" · "}stop ← {mappings.stop}
         {gymRemap ? ` · gym remapped click ${gymRemap.from} → ${gymRemap.to}` : ""}
         {!lastGymAt ? " · no gym yet — live blocked" : ""}
       </p>

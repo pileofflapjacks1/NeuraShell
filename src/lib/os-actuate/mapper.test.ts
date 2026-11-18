@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { formatOsPreview, intentToOsSample } from "./mapper";
 import { DEFAULT_MAPPINGS } from "@/lib/intents/mapping";
+import { OS_CLICK_MIN } from "./types";
 
 describe("intentToOsSample", () => {
   it("maps velocity_2d", () => {
@@ -20,6 +21,14 @@ describe("intentToOsSample", () => {
       { clickThreshold: 0.65 }
     );
     expect(s?.click).toBe(0.9);
+  });
+
+  it("lifts an accepted click to a strength the receiver accepts", () => {
+    const s = intentToOsSample(
+      { type: "class_label", label: "confirm", confidence: 0.7, t: 1000 },
+      { clickThreshold: 0.65 }
+    );
+    expect(s?.click).toBe(OS_CLICK_MIN);
   });
 
   it("ignores low confidence confirm", () => {

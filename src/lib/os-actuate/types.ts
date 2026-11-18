@@ -20,5 +20,11 @@ export type OsPreviewLine = {
   text: string;
 };
 
+/**
+ * Click strength the receiver treats as a click (Intent→OS `--click-threshold`
+ * default). An accepted click is never emitted below this.
+ */
+export const OS_CLICK_MIN = 0.85;
+
 export const DEFAULT_OS_ENDPOINT = "http://127.0.0.1:8765/intent";
 export const MAX_OS_PREVIEW = 48;

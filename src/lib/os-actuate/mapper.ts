@@ -4,7 +4,7 @@ import {
   gestureFromIntent,
   type ActionMappings,
 } from "@/lib/intents/mapping";
-import type { OsSample } from "./types";
+import { OS_CLICK_MIN, type OsSample } from "./types";
 
 export type OsMapOpts = {
   clickThreshold?: number;
@@ -44,7 +44,10 @@ export function intentToOsSample(
 
 function clickStrength(event: IntentEvent, clickThreshold: number): number {
   if (event.type === "class_label") {
-    return event.confidence >= clickThreshold ? event.confidence : 0;
+    // Once the shell threshold accepts the gesture, emit a strength the
+    // receiver also accepts. Otherwise 0.65–0.85 clicks in the shell only.
+    if (event.confidence < clickThreshold) return 0;
+    return Math.min(1, Math.max(event.confidence, OS_CLICK_MIN));
   }
   if (event.type === "switch_binary" && event.active) return 0.9;
   if (event.type === "synthetic") return 0.9;
@@ -70,7 +73,7 @@ export function formatOsPreview(
   const moving = Math.hypot(sample.vx, sample.vy) > 0.02;
   const viaBit = via ? ` via ${via}` : "";
   const mapBit = clickMapsTo ? ` (click←${clickMapsTo})` : "";
-  if (sample.click >= 0.85) {
+  if (sample.click >= OS_CLICK_MIN) {
     return {
       kind: posted ? "post" : "click",
       text: `${mode === "live" && posted ? "LIVE " : ""}CLICK${viaBit}${mapBit} click=${sample.click.toFixed(2)}`,
